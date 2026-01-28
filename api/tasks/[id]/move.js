@@ -12,9 +12,9 @@ module.exports = async function handler(req, res) {
 
   try {
     const existing = await sql`SELECT * FROM tasks WHERE id = ${id}`;
-    if (existing.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
+    if (existing.length === 0) return res.status(404).json({ error: 'Task not found' });
 
-    const old = existing.rows[0];
+    const old = existing[0];
     let completed_at = old.completed_at;
     if (status === 'done' && old.status !== 'done') {
       completed_at = new Date().toISOString();
@@ -28,8 +28,7 @@ module.exports = async function handler(req, res) {
       RETURNING *
     `;
 
-    const task = parseTags(result.rows[0]);
-    return res.status(200).json(task);
+    return res.status(200).json(parseTags(result[0]));
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

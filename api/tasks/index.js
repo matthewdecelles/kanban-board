@@ -8,13 +8,13 @@ module.exports = async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const status = req.query.status;
-      let result;
+      let rows;
       if (status) {
-        result = await sql`SELECT * FROM tasks WHERE status = ${status} ORDER BY position, created_at DESC`;
+        rows = await sql`SELECT * FROM tasks WHERE status = ${status} ORDER BY position, created_at DESC`;
       } else {
-        result = await sql`SELECT * FROM tasks ORDER BY status, position, created_at DESC`;
+        rows = await sql`SELECT * FROM tasks ORDER BY status, position, created_at DESC`;
       }
-      const tasks = result.rows.map(parseTags);
+      const tasks = rows.map(parseTags);
       return res.status(200).json(tasks);
     } catch (error) {
       return res.status(500).json({ error: error.message });
@@ -27,8 +27,8 @@ module.exports = async function handler(req, res) {
       if (!title) return res.status(400).json({ error: 'Title is required' });
 
       const taskStatus = status || 'backlog';
-      const maxPos = await sql`SELECT COALESCE(MAX(position), 0) + 1 as next_pos FROM tasks WHERE status = ${taskStatus}`;
-      const nextPos = maxPos.rows[0].next_pos;
+      const maxPosResult = await sql`SELECT COALESCE(MAX(position), 0) + 1 as next_pos FROM tasks WHERE status = ${taskStatus}`;
+      const nextPos = maxPosResult[0].next_pos;
 
       const result = await sql`
         INSERT INTO tasks (title, description, priority, status, due_date, tags, position)
@@ -36,7 +36,7 @@ module.exports = async function handler(req, res) {
         RETURNING *
       `;
 
-      return res.status(201).json(parseTags(result.rows[0]));
+      return res.status(201).json(parseTags(result[0]));
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }

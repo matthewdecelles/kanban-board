@@ -7,7 +7,7 @@ module.exports = async function handler(req, res) {
   const sql = await getDb();
 
   try {
-    const result = await sql`
+    const rows = await sql`
       SELECT
         COUNT(*) as total,
         SUM(CASE WHEN status = 'backlog' THEN 1 ELSE 0 END) as backlog,
@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
         SUM(CASE WHEN due_date < CURRENT_DATE::TEXT AND status != 'done' THEN 1 ELSE 0 END) as overdue
       FROM tasks
     `;
-    return res.status(200).json(result.rows[0]);
+    return res.status(200).json(rows[0]);
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

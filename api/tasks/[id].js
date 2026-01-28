@@ -8,9 +8,9 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const result = await sql`SELECT * FROM tasks WHERE id = ${id}`;
-      if (result.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
-      return res.status(200).json(parseTags(result.rows[0]));
+      const rows = await sql`SELECT * FROM tasks WHERE id = ${id}`;
+      if (rows.length === 0) return res.status(404).json({ error: 'Task not found' });
+      return res.status(200).json(parseTags(rows[0]));
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -19,9 +19,9 @@ module.exports = async function handler(req, res) {
   if (req.method === 'PATCH') {
     try {
       const existing = await sql`SELECT * FROM tasks WHERE id = ${id}`;
-      if (existing.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
+      if (existing.length === 0) return res.status(404).json({ error: 'Task not found' });
 
-      const old = existing.rows[0];
+      const old = existing[0];
       const { title, description, priority, status, due_date, tags } = req.body;
 
       let completed_at = old.completed_at;
@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
         RETURNING *
       `;
 
-      return res.status(200).json(parseTags(result.rows[0]));
+      return res.status(200).json(parseTags(result[0]));
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -54,7 +54,7 @@ module.exports = async function handler(req, res) {
   if (req.method === 'DELETE') {
     try {
       const existing = await sql`SELECT * FROM tasks WHERE id = ${id}`;
-      if (existing.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
+      if (existing.length === 0) return res.status(404).json({ error: 'Task not found' });
       await sql`DELETE FROM tasks WHERE id = ${id}`;
       return res.status(204).end();
     } catch (error) {
