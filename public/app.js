@@ -5,10 +5,10 @@ let tasks = [];
 async function fetchTasks() {
   const res = await fetch(`${API_BASE}/tasks`);
   tasks = await res.json();
-  // Convert tags string to array
+  // Normalize tags to array
   tasks = tasks.map(t => ({
     ...t,
-    tags: t.tags ? t.tags.split(',').map(tag => tag.trim()).filter(Boolean) : []
+    tags: Array.isArray(t.tags) ? t.tags : (typeof t.tags === 'string' ? (() => { try { return JSON.parse(t.tags); } catch { return t.tags.split(',').map(s => s.trim()).filter(Boolean); } })() : [])
   }));
   renderBoard();
   updateCounts();
