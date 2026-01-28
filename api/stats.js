@@ -4,10 +4,10 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  const db = await getDb();
+  const sql = await getDb();
 
   try {
-    const result = await db.execute(`
+    const result = await sql`
       SELECT
         COUNT(*) as total,
         SUM(CASE WHEN status = 'backlog' THEN 1 ELSE 0 END) as backlog,
@@ -16,9 +16,9 @@ module.exports = async function handler(req, res) {
         SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
         SUM(CASE WHEN priority = 'urgent' THEN 1 ELSE 0 END) as urgent,
         SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high,
-        SUM(CASE WHEN due_date < date('now') AND status != 'done' THEN 1 ELSE 0 END) as overdue
+        SUM(CASE WHEN due_date < CURRENT_DATE::TEXT AND status != 'done' THEN 1 ELSE 0 END) as overdue
       FROM tasks
-    `);
+    `;
     return res.status(200).json(result.rows[0]);
   } catch (error) {
     return res.status(500).json({ error: error.message });

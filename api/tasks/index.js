@@ -1,23 +1,18 @@
 const { getDb } = require('../_db');
 
 module.exports = async function handler(req, res) {
-  const db = await getDb();
+  const sql = await getDb();
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method === 'GET') {
     try {
       const status = req.query.status;
       let result;
       if (status) {
-        result = await db.execute({
-          sql: 'SELECT * FROM tasks WHERE status = ? ORDER BY position, created_at DESC',
-          args: [status],
-        });
+        result = await sql`SELECT * FROM tasks WHERE status = ${status} ORDER BY position, created_at DESC`;
       } else {
-        result = await db.execute('SELECT * FROM tasks ORDER BY status, position, created_at DESC');
+        result = await sql`SELECT * FROM tasks ORDER BY status, position, created_at DESC`;
       }
       const tasks = result.rows.map(parseTags);
       return res.status(200).json(tasks);
@@ -29,37 +24,19 @@ module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { title, description, priority, status, due_date, tags } = req.body;
-      if (!title) {
-        return res.status(400).json({ error: 'Title is required' });
-      }
+      if (!title) return res.status(400).json({ error: 'Title is required' });
 
       const taskStatus = status || 'backlog';
-      const maxPos = await db.execute({
-        sql: 'SELECT COALESCE(MAX(position), 0) + 1 as next_pos FROM tasks WHERE status = ?',
-        args: [taskStatus],
-      });
+      const maxPos = await sql`SELECT COALESCE(MAX(position), 0) + 1 as next_pos FROM tasks WHERE status = ${taskStatus}`;
       const nextPos = maxPos.rows[0].next_pos;
 
-      const result = await db.execute({
-        sql: `INSERT INTO tasks (title, description, priority, status, due_date, tags, position)
-              VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        args: [
-          title,
-          description || '',
-          priority || 'medium',
-          taskStatus,
-          due_date || null,
-          JSON.stringify(tags || []),
-          nextPos,
-        ],
-      });
+      const result = await sql`
+        INSERT INTO tasks (title, description, priority, status, due_date, tags, position)
+        VALUES (${title}, ${description || ''}, ${priority || 'medium'}, ${taskStatus}, ${due_date || null}, ${JSON.stringify(tags || [])}, ${nextPos})
+        RETURNING *
+      `;
 
-      const task = await db.execute({
-        sql: 'SELECT * FROM tasks WHERE id = ?',
-        args: [result.lastInsertRowid],
-      });
-
-      return res.status(201).json(parseTags(task.rows[0]));
+      return res.status(201).json(parseTags(result.rows[0]));
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
