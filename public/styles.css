@@ -255,6 +255,18 @@ body {
   font-size: 0.9rem;
 }
 
+.btn-dashboard {
+  background: linear-gradient(135deg, #f85149, #da6832);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.btn-dashboard:hover {
+  background: linear-gradient(135deg, #da3e37, #c45a2a);
+  transform: translateY(-1px);
+}
+
 .btn-primary {
   background: var(--accent-blue);
   color: white;
