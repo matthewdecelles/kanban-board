@@ -1,6 +1,6 @@
 const SECRET = 'matt2026stanley';
 const COOKIE_NAME = 'auth_token';
-const THIRTY_DAYS = 60 * 60 * 24 * 30;
+const NINETY_DAYS = 60 * 60 * 24 * 90;
 
 export default function middleware(request) {
   const url = new URL(request.url);
@@ -28,7 +28,7 @@ export default function middleware(request) {
       status: 302,
       headers: {
         'Location': cleanUrl,
-        'Set-Cookie': `${COOKIE_NAME}=${SECRET}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${THIRTY_DAYS}`,
+        'Set-Cookie': `${COOKIE_NAME}=${SECRET}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${NINETY_DAYS}`,
       },
     });
   }
