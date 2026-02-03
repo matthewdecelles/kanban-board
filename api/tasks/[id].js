@@ -10,7 +10,7 @@ module.exports = async function handler(req, res) {
     try {
       const rows = await sql`SELECT * FROM tasks WHERE id = ${id}`;
       if (rows.length === 0) return res.status(404).json({ error: 'Task not found' });
-      return res.status(200).json(parseTags(rows[0]));
+      return res.status(200).json(parseTask(rows[0]));
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
       if (existing.length === 0) return res.status(404).json({ error: 'Task not found' });
 
       const old = existing[0];
-      const { title, description, priority, status, due_date, tags } = req.body;
+      const { title, description, priority, status, due_date, tags, blocked_by } = req.body;
 
       let completed_at = old.completed_at;
       if (status === 'done' && old.status !== 'done') {
@@ -39,13 +39,52 @@ module.exports = async function handler(req, res) {
           status = COALESCE(${status || null}, status),
           due_date = COALESCE(${due_date !== undefined ? due_date : null}, due_date),
           tags = COALESCE(${tags ? JSON.stringify(tags) : null}, tags),
+          blocked_by = COALESCE(${blocked_by ? JSON.stringify(blocked_by) : null}, blocked_by),
           updated_at = NOW(),
           completed_at = ${completed_at}
         WHERE id = ${id}
         RETURNING *
       `;
 
-      return res.status(200).json(parseTags(result[0]));
+      return res.status(200).json(parseTask(result[0]));
+    } catch (error) {
+      return res.status(500).json({ error: error.message });
+    }
+  }
+
+  if (req.method === 'PUT') {
+    // Move/update status (same as PATCH but also supports position)
+    try {
+      const existing = await sql`SELECT * FROM tasks WHERE id = ${id}`;
+      if (existing.length === 0) return res.status(404).json({ error: 'Task not found' });
+
+      const old = existing[0];
+      const { title, description, priority, status, due_date, tags, blocked_by, position } = req.body;
+
+      let completed_at = old.completed_at;
+      if (status === 'done' && old.status !== 'done') {
+        completed_at = new Date().toISOString();
+      } else if (status && status !== 'done') {
+        completed_at = null;
+      }
+
+      const result = await sql`
+        UPDATE tasks SET
+          title = COALESCE(${title || null}, title),
+          description = COALESCE(${description !== undefined ? description : null}, description),
+          priority = COALESCE(${priority || null}, priority),
+          status = COALESCE(${status || null}, status),
+          due_date = COALESCE(${due_date !== undefined ? due_date : null}, due_date),
+          tags = COALESCE(${tags ? JSON.stringify(tags) : null}, tags),
+          blocked_by = COALESCE(${blocked_by ? JSON.stringify(blocked_by) : null}, blocked_by),
+          position = COALESCE(${position !== undefined ? position : null}, position),
+          updated_at = NOW(),
+          completed_at = ${completed_at}
+        WHERE id = ${id}
+        RETURNING *
+      `;
+
+      return res.status(200).json(parseTask(result[0]));
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }
@@ -65,11 +104,18 @@ module.exports = async function handler(req, res) {
   return res.status(405).json({ error: 'Method not allowed' });
 };
 
-function parseTags(task) {
+function parseTask(task) {
   if (!task) return task;
   const obj = { ...task };
   if (typeof obj.tags === 'string') {
     try { obj.tags = JSON.parse(obj.tags); } catch { obj.tags = []; }
   }
+  if (typeof obj.blocked_by === 'string') {
+    try { obj.blocked_by = JSON.parse(obj.blocked_by); } catch { obj.blocked_by = []; }
+  }
+  if (!obj.blocked_by) obj.blocked_by = [];
   return obj;
 }
+
+// Alias for backward compatibility
+const parseTags = parseTask;
