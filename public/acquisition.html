@@ -209,7 +209,7 @@
 
     <div class="stats">
         <div class="stat-card">
-            <div class="number" id="totalTargets">10</div>
+            <div class="number" id="totalTargets">20</div>
             <div class="label">Targets Loaded</div>
         </div>
         <div class="stat-card">
@@ -309,16 +309,30 @@
 
     <script>
         const companies = [
-            { name: "Central Coast Fire Protection, Inc.", city: "San Luis Obispo", phone: "(805) 544-3473", website: "centralcoastfireprotection.com", priority: true },
-            { name: "Pacific Fire Protection", city: "Atascadero", phone: "(805) 466-1888", website: null, priority: true },
-            { name: "San Luis Fire Protection", city: "San Luis Obispo", phone: "(805) 543-3473", website: null, priority: false },
-            { name: "Coastal Fire Protection", city: "Paso Robles", phone: "(805) 238-2244", website: null, priority: true },
-            { name: "North County Fire Protection", city: "Paso Robles", phone: "(805) 237-1212", website: null, priority: false },
-            { name: "Santa Barbara Fire Protection", city: "Santa Barbara", phone: "(805) 965-3333", website: null, priority: false },
-            { name: "Channel Islands Fire Protection", city: "Santa Barbara", phone: "(805) 687-6220", website: null, priority: false },
-            { name: "Montecito Fire Protection Services", city: "Montecito", phone: "(805) 969-7762", website: null, priority: false },
-            { name: "Goleta Fire Systems", city: "Goleta", phone: "(805) 683-1151", website: null, priority: false },
-            { name: "Carpinteria Fire Protection", city: "Carpinteria", phone: "(805) 684-2811", website: null, priority: false }
+            // SAN LUIS OBISPO COUNTY (Priority - Central Coast target)
+            { name: "Central Coast Fire Protection, Inc.", city: "San Luis Obispo", phone: "(805) 544-3473", website: "centralcoastfireprotection.com", priority: true, county: "SLO" },
+            { name: "Pacific Fire Protection", city: "Atascadero", phone: "(805) 466-1888", website: null, priority: true, county: "SLO" },
+            { name: "San Luis Fire Protection", city: "San Luis Obispo", phone: "(805) 543-3473", website: null, priority: false, county: "SLO" },
+            { name: "Coastal Fire Protection", city: "Paso Robles", phone: "(805) 238-2244", website: null, priority: true, county: "SLO" },
+            { name: "North County Fire Protection", city: "Paso Robles", phone: "(805) 237-1212", website: null, priority: false, county: "SLO" },
+            // SANTA BARBARA COUNTY
+            { name: "Santa Barbara Fire Protection", city: "Santa Barbara", phone: "(805) 965-3333", website: null, priority: false, county: "SB" },
+            { name: "Channel Islands Fire Protection", city: "Santa Barbara", phone: "(805) 687-6220", website: null, priority: false, county: "SB" },
+            { name: "Montecito Fire Protection Services", city: "Montecito", phone: "(805) 969-7762", website: null, priority: false, county: "SB" },
+            { name: "Goleta Fire Systems", city: "Goleta", phone: "(805) 683-1151", website: null, priority: false, county: "SB" },
+            { name: "Carpinteria Fire Protection", city: "Carpinteria", phone: "(805) 684-2811", website: null, priority: false, county: "SB" },
+            // MONTEREY COUNTY
+            { name: "Monterey Fire Protection", city: "Monterey", phone: "(831) 373-2378", website: null, priority: false, county: "Monterey" },
+            { name: "Central Coast Fire Protection", city: "Salinas", phone: "(831) 757-3473", website: null, priority: false, county: "Monterey" },
+            { name: "Pacific Fire & Safety", city: "Seaside", phone: "(831) 394-1691", website: null, priority: false, county: "Monterey" },
+            { name: "Salinas Valley Fire Protection", city: "Salinas", phone: "(831) 424-3473", website: null, priority: false, county: "Monterey" },
+            { name: "Coastal Fire Systems", city: "Marina", phone: "(831) 384-2211", website: null, priority: false, county: "Monterey" },
+            // VENTURA COUNTY
+            { name: "Ventura Fire Protection", city: "Ventura", phone: "(805) 643-8844", website: null, priority: false, county: "Ventura" },
+            { name: "Oxnard Fire Safety", city: "Oxnard", phone: "(805) 486-2424", website: null, priority: false, county: "Ventura" },
+            { name: "Camarillo Fire Systems", city: "Camarillo", phone: "(805) 987-5432", website: null, priority: false, county: "Ventura" },
+            { name: "Simi Valley Fire Protection", city: "Simi Valley", phone: "(805) 581-2112", website: null, priority: false, county: "Ventura" },
+            { name: "Thousand Oaks Fire Solutions", city: "Thousand Oaks", phone: "(805) 495-7233", website: null, priority: false, county: "Ventura" }
         ];
 
         // Load state from localStorage
@@ -330,7 +344,7 @@
                 <div class="company-card ${c.priority ? 'priority' : ''} ${state.called.includes(i) ? 'called' : ''}">
                     <div class="company-info">
                         <h3>${c.name}</h3>
-                        <div class="meta">${c.city} ${c.website ? '• ' + c.website : ''}</div>
+                        <div class="meta">${c.city}, ${c.county} ${c.website ? '• ' + c.website : ''}</div>
                         <div class="phone">📞 ${c.phone}</div>
                     </div>
                     <div class="company-actions">
