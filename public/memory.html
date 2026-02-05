@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 Memory — Matt's Command Center</title>
+<link rel="stylesheet" href="nav.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--blue:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#a371f7;--orange:#f0883e}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.page{max-width:1200px;margin:0 auto;padding:24px 20px}
+.page-title{font-size:1.6rem;font-weight:700;margin-bottom:4px}
+.page-sub{color:var(--dim);font-size:0.85rem;margin-bottom:24px}
+
+.memory-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card h2{font-size:1rem;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+.mem-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:0.83rem;transition:border-color 0.15s}
+.mem-item:hover{border-color:var(--blue)}
+.mem-icon{font-size:1.1rem;flex-shrink:0}
+.mem-text{flex:1}
+.mem-title{font-weight:600;margin-bottom:2px}
+.mem-desc{color:var(--dim);font-size:0.78rem}
+
+.empty-state{color:var(--dim);font-size:0.85rem;padding:16px 0;text-align:center;font-style:italic}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<div class="page">
+  <h1 class="page-title">🧠 Memory</h1>
+  <p class="page-sub">Stanley's memory bank — people, learnings, and daily context.</p>
+
+  <div class="memory-grid">
+    <div class="card">
+      <h2>👤 People</h2>
+      <div class="mem-item">
+        <span class="mem-icon">👔</span>
+        <div class="mem-text">
+          <div class="mem-title">Matt DeCelles</div>
+          <div class="mem-desc">The human. CEO, builder, optimizer. Everything is for Matt.</div>
+        </div>
+      </div>
+      <div class="mem-item">
+        <span class="mem-icon">🤝</span>
+        <div class="mem-text">
+          <div class="mem-title">Shiv</div>
+          <div class="mem-desc">Business friend, co-builder. SNG agent operator.</div>
+        </div>
+      </div>
+      <div class="mem-item">
+        <span class="mem-icon">🤖</span>
+        <div class="mem-text">
+          <div class="mem-title">Stanley</div>
+          <div class="mem-desc">AI Chief of Staff. Stateless. Architecture-driven.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>📅 Daily Logs</h2>
+      <div class="mem-item">
+        <span class="mem-icon">📝</span>
+        <div class="mem-text">
+          <div class="mem-title">Today's Log</div>
+          <div class="mem-desc">Auto-generated daily from conversations and actions.</div>
+        </div>
+      </div>
+      <div class="mem-item">
+        <span class="mem-icon">📅</span>
+        <div class="mem-text">
+          <div class="mem-title">Recent Days</div>
+          <div class="mem-desc">Stored in memory/daily/ — accessible each session boot.</div>
+        </div>
+      </div>
+      <div class="empty-state">Daily logs are auto-maintained by Stanley's cron system.</div>
+    </div>
+
+    <div class="card">
+      <h2>💡 Learnings</h2>
+      <div class="mem-item">
+        <span class="mem-icon">⚡</span>
+        <div class="mem-text">
+          <div class="mem-title">Real-time Learning</div>
+          <div class="mem-desc">Corrections and successes captured immediately via realtime-learn.sh.</div>
+        </div>
+      </div>
+      <div class="mem-item">
+        <span class="mem-icon">📊</span>
+        <div class="mem-text">
+          <div class="mem-title">Patterns</div>
+          <div class="mem-desc">PATTERNS.md — recurring behaviors, anti-patterns, and positive signals.</div>
+        </div>
+      </div>
+      <div class="mem-item">
+        <span class="mem-icon">🔄</span>
+        <div class="mem-text">
+          <div class="mem-title">Kaizen</div>
+          <div class="mem-desc">Continuous improvement metrics tracked in agents/kaizen/.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🗄️ Memory Architecture</h2>
+      <div class="mem-item">
+        <span class="mem-icon">📋</span>
+        <div class="mem-text">
+          <div class="mem-title">MEMORY.md</div>
+          <div class="mem-desc">Long-term curated memory. Promoted from daily logs.</div>
+        </div>
+      </div>
+      <div class="mem-item">
+        <span class="mem-icon">🧩</span>
+        <div class="mem-text">
+          <div class="mem-title">Session Log</div>
+          <div class="mem-desc">memory/session-log.md — last 50 lines read every message.</div>
+        </div>
+      </div>
+      <div class="mem-item">
+        <span class="mem-icon">💬</span>
+        <div class="mem-text">
+          <div class="mem-title">Conversations</div>
+          <div class="mem-desc">memory/conversations/ — logged from all channels.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

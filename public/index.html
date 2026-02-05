@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🦞 Matt's Task List</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=20260204b">
+  <link rel="stylesheet" href="nav.css">
 </head>
 <body>
+  <script src="nav.js"></script>
   <div class="app">
     <header class="header">
       <div>
@@ -14,7 +16,10 @@
         <div class="subtitle">Everything in one place. Nothing slips.</div>
       </div>
       <div class="header-actions">
-        <a href="https://stanley-dashboard.vercel.app" target="_blank" class="btn btn-dashboard">🧠 Matt's Command Center</a>
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="kanban" onclick="setView('kanban')">📋 Kanban</button>
+          <button class="view-btn" data-view="table" onclick="setView('table')">📊 Table</button>
+        </div>
         <div class="stats" id="stats"></div>
         <button class="btn btn-primary" onclick="openModal()">+ New Task</button>
       </div>
@@ -53,6 +58,11 @@
         <div class="tasks" id="tasks-done"></div>
       </div>
     </main>
+
+    <!-- Table View -->
+    <main class="table-view" id="table-view" style="display: none;">
+      <div id="table-container"></div>
+    </main>
   </div>
 
   <!-- Task Modal -->
@@ -83,6 +93,7 @@
               <option value="medium" selected>Medium</option>
               <option value="high">High</option>
               <option value="urgent">Urgent</option>
+              <option value="critical">Critical</option>
             </select>
           </div>
 
@@ -93,6 +104,34 @@
               <option value="todo">To Do</option>
               <option value="in_progress">In Progress</option>
               <option value="done">Done</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="assignee">Assignee</label>
+            <select id="assignee">
+              <option value="">Unassigned</option>
+              <option value="matt">Matt</option>
+              <option value="patrick">Patrick</option>
+              <option value="amy">Amy</option>
+              <option value="stanley">Stanley</option>
+              <option value="kelly">Kelly</option>
+              <option value="brittany">Brittany</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category">
+              <option value="">Uncategorized</option>
+              <option value="wp">William Painter</option>
+              <option value="acquisitions">Acquisitions</option>
+              <option value="personal">Personal</option>
+              <option value="wedding">Wedding</option>
+              <option value="finance">Finance</option>
+              <option value="health">Health</option>
             </select>
           </div>
         </div>
@@ -110,12 +149,13 @@
         <div class="modal-actions">
           <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
           <button type="button" class="btn btn-danger" id="delete-btn" onclick="deleteTask()" style="display: none;">Delete</button>
+          <button type="button" class="btn btn-success" id="complete-btn" onclick="completeTask()" style="display: none;">✅ Complete</button>
           <button type="submit" class="btn btn-primary">Save Task</button>
         </div>
       </form>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=20260203"></script>
 </body>
 </html>

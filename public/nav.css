@@ -1,0 +1,82 @@
+/* ===== Command Center Navigation Bar ===== */
+.cc-nav {
+  display: flex;
+  align-items: center;
+  background: #0d1117;
+  border-bottom: 1px solid #21262d;
+  padding: 0 16px;
+  height: 48px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.cc-nav-brand {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #58a6ff;
+  margin-right: 20px;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.cc-nav-tabs {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+}
+
+.cc-nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 100%;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #8b949e;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.cc-nav-tab:hover {
+  color: #c9d1d9;
+  background: rgba(255,255,255,0.04);
+}
+
+.cc-nav-tab.active {
+  color: #e6edf3;
+  border-bottom-color: #58a6ff;
+}
+
+.cc-nav-tab .tab-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .cc-nav {
+    padding: 0 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cc-nav-brand {
+    display: none;
+  }
+  .cc-nav-tab {
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+  .cc-nav-tab .tab-label {
+    display: none;
+  }
+  .cc-nav-tab .tab-icon {
+    font-size: 1.2rem;
+  }
+}

@@ -1,5 +1,26 @@
 const API_BASE = '/api';
 let tasks = [];
+let currentView = 'kanban';
+
+// Category definitions
+const CATEGORIES = {
+  wp: { name: 'William Painter', icon: '🕶️' },
+  acquisitions: { name: 'Acquisitions', icon: '🎯' },
+  personal: { name: 'Personal', icon: '🏠' },
+  wedding: { name: 'Wedding', icon: '💒' },
+  finance: { name: 'Finance', icon: '💰' },
+  health: { name: 'Health', icon: '🏋️' },
+  '': { name: 'Uncategorized', icon: '📦' }
+};
+
+const ASSIGNEES = {
+  matt: { name: 'Matt', color: 'matt' },
+  patrick: { name: 'Patrick', color: 'patrick' },
+  amy: { name: 'Amy', color: 'amy' },
+  stanley: { name: 'Stanley', color: 'stanley' },
+  kelly: { name: 'Kelly', color: 'kelly' },
+  brittany: { name: 'Brittany', color: 'brittany' }
+};
 
 // API Functions
 async function fetchTasks() {
@@ -10,7 +31,13 @@ async function fetchTasks() {
     ...t,
     tags: Array.isArray(t.tags) ? t.tags : (typeof t.tags === 'string' ? (() => { try { return JSON.parse(t.tags); } catch { return t.tags.split(',').map(s => s.trim()).filter(Boolean); } })() : [])
   }));
-  renderBoard();
+  
+  // Render the current view
+  if (currentView === 'kanban') {
+    renderBoard();
+  } else {
+    renderTableView();
+  }
   updateCounts();
 }
 
@@ -30,7 +57,7 @@ async function createTask(task) {
 }
 
 async function updateTask(id, updates) {
-  const res = await fetch(`${API_BASE}/tasks/${id}`, {
+  const res = await fetch(`${API_BASE}/tasks?id=${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates)
@@ -39,16 +66,32 @@ async function updateTask(id, updates) {
 }
 
 async function deleteTaskApi(id) {
-  await fetch(`${API_BASE}/tasks/${id}`, { method: 'DELETE' });
+  await fetch(`${API_BASE}/tasks?id=${id}`, { method: 'DELETE' });
 }
 
 async function moveTaskApi(id, status, position) {
-  const res = await fetch(`${API_BASE}/tasks/${id}/move`, {
-    method: 'POST',
+  const res = await fetch(`${API_BASE}/tasks?id=${id}`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status, position })
   });
   return res.json();
+}
+
+// View Toggle
+function setView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === view);
+  });
+  document.getElementById('board').style.display = view === 'kanban' ? 'flex' : 'none';
+  document.getElementById('table-view').style.display = view === 'table' ? 'block' : 'none';
+  
+  if (view === 'kanban') {
+    renderBoard();
+  } else {
+    renderTableView();
+  }
 }
 
 // Render Functions
@@ -59,6 +102,7 @@ function renderBoard() {
     const container = document.getElementById(`tasks-${status}`);
     const columnTasks = tasks
       .filter(t => t.status === status)
+      .filter(t => !(t.tags && t.tags.includes('stanley')))
       .sort((a, b) => a.position - b.position);
 
     container.innerHTML = columnTasks.map(task => createTaskCard(task)).join('');
@@ -67,18 +111,142 @@ function renderBoard() {
   setupDragAndDrop();
 }
 
+// Table View with Category Groups
+function renderTableView() {
+  const container = document.getElementById('table-container');
+  const filteredTasks = tasks.filter(t => !(t.tags && t.tags.includes('stanley')));
+  
+  // Group by category
+  const grouped = {};
+  filteredTasks.forEach(task => {
+    const cat = task.category || '';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(task);
+  });
+  
+  // Sort categories - uncategorized last
+  const sortedCats = Object.keys(grouped).sort((a, b) => {
+    if (a === '') return 1;
+    if (b === '') return -1;
+    return (CATEGORIES[a]?.name || a).localeCompare(CATEGORIES[b]?.name || b);
+  });
+  
+  let html = '';
+  sortedCats.forEach(cat => {
+    const catTasks = grouped[cat];
+    const catInfo = CATEGORIES[cat] || { name: cat || 'Uncategorized', icon: '📦' };
+    const done = catTasks.filter(t => t.status === 'done').length;
+    const total = catTasks.length;
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+    
+    html += `
+      <div class="category-group${cat === '' ? ' uncategorized' : ''}" data-category="${cat}">
+        <div class="category-header" onclick="toggleCategory('${cat}')">
+          <div class="category-title">
+            <span class="category-icon">${catInfo.icon}</span>
+            <span>${catInfo.name}</span>
+            <span style="color: var(--text-secondary); font-weight: 400; font-size: 0.85rem;">${total} tasks</span>
+          </div>
+          <div class="category-meta">
+            <div class="progress-indicator">
+              <div class="progress-bar">
+                <div class="progress-fill" style="width: ${pct}%"></div>
+              </div>
+              <span>${done}/${total}</span>
+            </div>
+            <span class="collapse-icon">▼</span>
+          </div>
+        </div>
+        <div class="category-content">
+          <table class="task-table">
+            <thead>
+              <tr>
+                <th>Task</th>
+                <th>Status</th>
+                <th>Assignee</th>
+                <th>Priority</th>
+                <th>Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${catTasks.sort((a, b) => {
+                // Sort by status (in_progress first, then todo, then backlog, then done)
+                const statusOrder = { in_progress: 0, todo: 1, backlog: 2, done: 3 };
+                return (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2);
+              }).map(task => `
+                <tr>
+                  <td class="task-title-cell" onclick="openModal(${task.id})">${escapeHtml(task.title)}</td>
+                  <td><span class="status-badge ${task.status}">${formatStatus(task.status)}</span></td>
+                  <td>${task.assignee ? `<span class="assignee-badge ${task.assignee}">${ASSIGNEES[task.assignee]?.name || task.assignee}</span>` : '<span style="color: var(--text-secondary)">—</span>'}</td>
+                  <td><span class="priority-badge priority-${task.priority}">${task.priority}</span></td>
+                  <td>${task.due_date ? formatDueDateShort(task.due_date) : '<span style="color: var(--text-secondary)">—</span>'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+  
+  container.innerHTML = html || '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">No tasks yet. Click "+ New Task" to get started.</p>';
+}
+
+function toggleCategory(cat) {
+  const group = document.querySelector(`.category-group[data-category="${cat}"]`);
+  if (group) {
+    group.classList.toggle('collapsed');
+  }
+}
+
+function formatStatus(status) {
+  const labels = { backlog: 'Backlog', todo: 'To Do', in_progress: 'In Progress', done: 'Done' };
+  return labels[status] || status;
+}
+
+function formatDueDateShort(dateStr) {
+  const date = new Date(dateStr + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const isOverdue = date < today;
+  const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  
+  return `<span class="due-date${isOverdue ? ' overdue' : ''}">${formatted}</span>`;
+}
+
 function createTaskCard(task) {
   const priorityClass = `priority-${task.priority}`;
   const dueDateHtml = task.due_date ? formatDueDate(task.due_date) : '';
-  const tagsHtml = task.tags && task.tags.length > 0
-    ? `<div class="task-tags">${task.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`
+
+  // Check if task has "important" tag
+  const hasImportant = task.tags && task.tags.includes('important');
+  const importantBadge = hasImportant ? '<span class="priority-badge priority-important">important</span>' : '';
+
+  // Add urgent/critical class for tinted cards
+  let cardClass = '';
+  if (task.priority === 'critical') cardClass = ' critical';
+  else if (task.priority === 'urgent') cardClass = ' urgent';
+  
+  // Assignee badge
+  const assigneeHtml = task.assignee && ASSIGNEES[task.assignee] 
+    ? `<span class="assignee-badge ${task.assignee}">${ASSIGNEES[task.assignee].name}</span>` 
+    : '';
+  
+  // Filter out "important" from regular tags display
+  const regularTags = task.tags ? task.tags.filter(t => t !== 'important') : [];
+  const tagsHtml = regularTags.length > 0
+    ? `<div class="task-tags">${regularTags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
 
+
   return `
-    <div class="task-card" draggable="true" data-id="${task.id}" onclick="openModal(${task.id})">
+    <div class="task-card${cardClass}" draggable="true" data-id="${task.id}" onclick="openModal(${task.id})">
       <div class="task-title">${escapeHtml(task.title)}</div>
       <div class="task-meta">
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
+        ${importantBadge}
+        ${assigneeHtml}
         ${dueDateHtml}
       </div>
       ${tagsHtml}
@@ -111,7 +279,7 @@ function formatDueDate(dateStr) {
 function updateCounts() {
   const columns = ['backlog', 'todo', 'in_progress', 'done'];
   columns.forEach(status => {
-    const count = tasks.filter(t => t.status === status).length;
+    const count = tasks.filter(t => t.status === status).filter(t => !(t.tags && t.tags.includes('stanley'))).length;
     document.getElementById(`count-${status}`).textContent = count;
   });
 }
@@ -120,6 +288,10 @@ function renderStats(stats) {
   const statsEl = document.getElementById('stats');
   let html = `
     <span class="stat-item">Total: ${stats.total}</span>
+    <span class="stat-item">Backlog: ${stats.backlog}</span>
+    <span class="stat-item">To Do: ${stats.todo}</span>
+    <span class="stat-item">In Progress: ${stats.in_progress}</span>
+    <span class="stat-item">Done: ${stats.done}</span>
   `;
 
   if (stats.overdue > 0) {
@@ -127,7 +299,7 @@ function renderStats(stats) {
   }
 
   if (stats.urgent > 0) {
-    html += `<span class="stat-item">Urgent: ${stats.urgent}</span>`;
+    html += `<span class="stat-item urgent">Urgent: ${stats.urgent}</span>`;
   }
 
   statsEl.innerHTML = html;
@@ -139,6 +311,7 @@ function openModal(taskId = null) {
   const form = document.getElementById('task-form');
   const title = document.getElementById('modal-title');
   const deleteBtn = document.getElementById('delete-btn');
+  const completeBtn = document.getElementById('complete-btn');
 
   form.reset();
   document.getElementById('task-id').value = '';
@@ -148,6 +321,7 @@ function openModal(taskId = null) {
     if (task) {
       title.textContent = 'Edit Task';
       deleteBtn.style.display = 'block';
+      completeBtn.style.display = task.status !== 'done' ? 'block' : 'none';
       document.getElementById('task-id').value = task.id;
       document.getElementById('title').value = task.title;
       document.getElementById('description').value = task.description || '';
@@ -155,10 +329,13 @@ function openModal(taskId = null) {
       document.getElementById('status').value = task.status;
       document.getElementById('due_date').value = task.due_date || '';
       document.getElementById('tags').value = (task.tags || []).join(', ');
+      document.getElementById('assignee').value = task.assignee || '';
+      document.getElementById('category').value = task.category || '';
     }
   } else {
     title.textContent = 'New Task';
     deleteBtn.style.display = 'none';
+    completeBtn.style.display = 'none';
   }
 
   modal.classList.add('active');
@@ -179,6 +356,8 @@ async function saveTask(event) {
     priority: document.getElementById('priority').value,
     status: document.getElementById('status').value,
     due_date: document.getElementById('due_date').value || null,
+    assignee: document.getElementById('assignee').value || null,
+    category: document.getElementById('category').value || null,
     tags: document.getElementById('tags').value
       .split(',')
       .map(t => t.trim())
@@ -196,6 +375,16 @@ async function saveTask(event) {
   await fetchStats();
 }
 
+async function completeTask() {
+  const taskId = document.getElementById('task-id').value;
+  if (taskId) {
+    await updateTask(taskId, { status: 'done' });
+    closeModal();
+    await fetchTasks();
+    await fetchStats();
+  }
+}
+
 async function deleteTask() {
   const taskId = document.getElementById('task-id').value;
   if (taskId && confirm('Are you sure you want to delete this task?')) {
@@ -207,21 +396,27 @@ async function deleteTask() {
 }
 
 // Drag and Drop
-function setupDragAndDrop() {
-  const cards = document.querySelectorAll('.task-card');
-  const columns = document.querySelectorAll('.tasks');
+let columnsInitialized = false;
 
+function setupDragAndDrop() {
+  // Attach drag listeners to new cards (cards get recreated on each render)
+  const cards = document.querySelectorAll('.task-card');
   cards.forEach(card => {
     card.addEventListener('dragstart', handleDragStart);
     card.addEventListener('dragend', handleDragEnd);
   });
 
-  columns.forEach(column => {
-    column.addEventListener('dragover', handleDragOver);
-    column.addEventListener('dragenter', handleDragEnter);
-    column.addEventListener('dragleave', handleDragLeave);
-    column.addEventListener('drop', handleDrop);
-  });
+  // Only attach column listeners once (columns are stable DOM elements)
+  if (!columnsInitialized) {
+    const columns = document.querySelectorAll('.tasks');
+    columns.forEach(column => {
+      column.addEventListener('dragover', handleDragOver);
+      column.addEventListener('dragenter', handleDragEnter);
+      column.addEventListener('dragleave', handleDragLeave);
+      column.addEventListener('drop', handleDrop);
+    });
+    columnsInitialized = true;
+  }
 }
 
 let draggedCard = null;

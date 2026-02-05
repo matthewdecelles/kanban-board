@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
         SUM(CASE WHEN status = 'todo' THEN 1 ELSE 0 END) as todo,
         SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
         SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as done,
-        SUM(CASE WHEN priority = 'urgent' THEN 1 ELSE 0 END) as urgent,
+        SUM(CASE WHEN priority = 'urgent' AND status != 'done' THEN 1 ELSE 0 END) as urgent,
         SUM(CASE WHEN priority = 'high' THEN 1 ELSE 0 END) as high,
         SUM(CASE WHEN due_date < CURRENT_DATE::TEXT AND status != 'done' THEN 1 ELSE 0 END) as overdue
       FROM tasks

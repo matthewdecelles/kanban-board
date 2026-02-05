@@ -14,7 +14,7 @@ async function initDb() {
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       description TEXT DEFAULT '',
-      priority TEXT DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high', 'urgent')),
+      priority TEXT DEFAULT 'medium' CHECK(priority IN ('low', 'medium', 'high', 'urgent', 'critical')),
       status TEXT DEFAULT 'backlog' CHECK(status IN ('backlog', 'todo', 'in_progress', 'done')),
       due_date TEXT,
       tags TEXT DEFAULT '[]',
@@ -22,14 +22,21 @@ async function initDb() {
       created_at TIMESTAMP DEFAULT NOW(),
       updated_at TIMESTAMP DEFAULT NOW(),
       completed_at TIMESTAMP,
-      position INTEGER DEFAULT 0
+      position INTEGER DEFAULT 0,
+      assignee TEXT,
+      category TEXT
     )
   `;
-  // Add blocked_by column if it doesn't exist (for existing tables)
+  // Add columns if they don't exist (for existing tables)
   try {
     await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS blocked_by TEXT DEFAULT '[]'`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee TEXT`;
+    await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS category TEXT`;
+    // Update priority constraint to include 'critical'
+    await sql`ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_priority_check`;
+    await sql`ALTER TABLE tasks ADD CONSTRAINT tasks_priority_check CHECK(priority IN ('low', 'medium', 'high', 'urgent', 'critical'))`;
   } catch (e) {
-    // Column might already exist or DB doesn't support IF NOT EXISTS
+    // Columns might already exist or constraint updates might fail silently
   }
   await sql`
     CREATE TABLE IF NOT EXISTS tickets (

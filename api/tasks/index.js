@@ -23,7 +23,7 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'POST') {
     try {
-      const { title, description, priority, status, due_date, tags, blocked_by } = req.body;
+      const { title, description, priority, status, due_date, tags, blocked_by, assignee, category } = req.body;
       if (!title) return res.status(400).json({ error: 'Title is required' });
 
       const taskStatus = status || 'backlog';
@@ -31,8 +31,8 @@ module.exports = async function handler(req, res) {
       const nextPos = maxPosResult[0].next_pos;
 
       const result = await sql`
-        INSERT INTO tasks (title, description, priority, status, due_date, tags, blocked_by, position)
-        VALUES (${title}, ${description || ''}, ${priority || 'medium'}, ${taskStatus}, ${due_date || null}, ${JSON.stringify(tags || [])}, ${JSON.stringify(blocked_by || [])}, ${nextPos})
+        INSERT INTO tasks (title, description, priority, status, due_date, tags, blocked_by, position, assignee, category)
+        VALUES (${title}, ${description || ''}, ${priority || 'medium'}, ${taskStatus}, ${due_date || null}, ${JSON.stringify(tags || [])}, ${JSON.stringify(blocked_by || [])}, ${nextPos}, ${assignee || null}, ${category || null})
         RETURNING *
       `;
 
@@ -52,7 +52,7 @@ module.exports = async function handler(req, res) {
       if (existing.length === 0) return res.status(404).json({ error: 'Task not found' });
 
       const old = existing[0];
-      const { title, description, priority, status, due_date, tags, blocked_by, position } = req.body;
+      const { title, description, priority, status, due_date, tags, blocked_by, position, assignee, category } = req.body;
 
       let completed_at = old.completed_at;
       if (status === 'done' && old.status !== 'done') {
@@ -71,6 +71,8 @@ module.exports = async function handler(req, res) {
           tags = COALESCE(${tags ? JSON.stringify(tags) : null}, tags),
           blocked_by = COALESCE(${blocked_by ? JSON.stringify(blocked_by) : null}, blocked_by),
           position = COALESCE(${position !== undefined ? position : null}, position),
+          assignee = COALESCE(${assignee !== undefined ? assignee : null}, assignee),
+          category = COALESCE(${category !== undefined ? category : null}, category),
           updated_at = NOW(),
           completed_at = ${completed_at}
         WHERE id = ${taskId}

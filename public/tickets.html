@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎫 Agent Tickets</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="tickets-theme.css">
+  <link rel="stylesheet" href="nav.css">
+</head>
+<body>
+  <script src="nav.js"></script>
+  <div class="app">
+    <header class="header">
+      <div>
+        <h1>🎫 Agent Tickets</h1>
+        <div class="subtitle">Self-regulating agent ticketing — humans approve, agents execute.</div>
+      </div>
+      <div class="header-actions">
+        <div class="wip-indicators" id="wip-indicators"></div>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Ticket</button>
+      </div>
+    </header>
+
+    <main class="ticket-board" id="ticket-board"></main>
+  </div>
+
+  <!-- Create / Edit Ticket Modal -->
+  <div class="modal-overlay" id="create-modal" onclick="closeCreateModal()">
+    <div class="modal modal-wide" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="create-modal-title">New Ticket</h2>
+        <button class="btn-close" onclick="closeCreateModal()">&times;</button>
+      </div>
+      <form id="ticket-form" onsubmit="saveTicket(event)">
+        <div class="form-group">
+          <label for="f-title">Title *</label>
+          <input type="text" id="f-title" required placeholder="What needs to be done?">
+        </div>
+
+        <div class="form-row form-row-3">
+          <div class="form-group">
+            <label for="f-type">Type</label>
+            <select id="f-type">
+              <option value="task">Task</option>
+              <option value="bug">Bug</option>
+              <option value="improvement">Improvement</option>
+              <option value="investigation">Investigation</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-priority">Priority (1=highest)</label>
+            <select id="f-priority">
+              <option value="1">P1 — Critical</option>
+              <option value="2">P2 — High</option>
+              <option value="3" selected>P3 — Medium</option>
+              <option value="4">P4 — Low</option>
+              <option value="5">P5 — Backlog</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-intent">Intent</label>
+            <select id="f-intent">
+              <option value="">—</option>
+              <option value="produce">Produce</option>
+              <option value="decide">Decide</option>
+              <option value="investigate">Investigate</option>
+              <option value="fix">Fix</option>
+              <option value="draft">Draft</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-requester">Requester</label>
+            <input type="text" id="f-requester" placeholder="matt, stanley, shiv...">
+          </div>
+          <div class="form-group">
+            <label for="f-owner">Owner</label>
+            <input type="text" id="f-owner" placeholder="unassigned" value="unassigned">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-wip-class">WIP Class</label>
+            <select id="f-wip-class">
+              <option value="general">General (5)</option>
+              <option value="web_calls">Web Calls (2)</option>
+              <option value="db_reads">DB Reads (4)</option>
+              <option value="code_exec">Code Exec (1)</option>
+              <option value="human_review">Human Review (3)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-budget-minutes">Budget (minutes)</label>
+            <input type="number" id="f-budget-minutes" value="45" min="1" max="480">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="f-dod">Definition of Done (one per line)</label>
+          <textarea id="f-dod" rows="3" placeholder="Each line becomes a checklist item"></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ticket Detail Modal -->
+  <div class="modal-overlay" id="detail-modal" onclick="closeDetailModal()">
+    <div class="modal modal-wide" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="detail-modal-title">Ticket Detail</h2>
+        <button class="btn-close" onclick="closeDetailModal()">&times;</button>
+      </div>
+      <div id="detail-content" class="detail-content"></div>
+    </div>
+  </div>
+
+  <!-- Signoff Modal -->
+  <div class="modal-overlay" id="signoff-modal" onclick="closeSignoffModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>✅ Approve Ticket</h2>
+        <button class="btn-close" onclick="closeSignoffModal()">&times;</button>
+      </div>
+      <form id="signoff-form" onsubmit="submitSignoff(event)">
+        <input type="hidden" id="signoff-ticket-id">
+        <div class="form-group">
+          <label for="signoff-notes">Approval Notes (optional)</label>
+          <textarea id="signoff-notes" rows="2" placeholder="LGTM, ship it..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="signoff-confidence">Confidence</label>
+          <select id="signoff-confidence">
+            <option value="1.0" selected>100% — Verified</option>
+            <option value="0.9">90% — Looks good</option>
+            <option value="0.7">70% — Acceptable</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeSignoffModal()">Cancel</button>
+          <button type="submit" class="btn btn-approve">✅ Approve & Close</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div class="modal-overlay" id="reject-modal" onclick="closeRejectModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2>🔄 Reject — Needs Rework</h2>
+        <button class="btn-close" onclick="closeRejectModal()">&times;</button>
+      </div>
+      <form id="reject-form" onsubmit="submitReject(event)">
+        <input type="hidden" id="reject-ticket-id">
+        <div class="form-group">
+          <label for="reject-reason">What needs to change? *</label>
+          <textarea id="reject-reason" rows="3" required placeholder="Explain what's wrong..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+          <button type="submit" class="btn btn-danger">🔄 Reject & Return to Executing</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="tickets.js"></script>
+</body>
+</html>

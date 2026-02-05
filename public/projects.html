@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📁 Projects — Matt's Command Center</title>
+<link rel="stylesheet" href="nav.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--blue:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#a371f7;--orange:#f0883e}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.page{max-width:1200px;margin:0 auto;padding:24px 20px}
+.page-title{font-size:1.6rem;font-weight:700;margin-bottom:4px}
+.page-sub{color:var(--dim);font-size:0.85rem;margin-bottom:24px}
+
+.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.project-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;transition:border-color 0.15s}
+.project-card:hover{border-color:var(--blue)}
+.project-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.project-name{font-size:1.05rem;font-weight:600}
+.project-desc{color:var(--dim);font-size:0.83rem;line-height:1.5;margin-bottom:14px}
+.project-footer{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 10px;border-radius:10px;font-size:0.72rem;font-weight:600}
+.badge-active{background:rgba(63,185,80,0.15);color:var(--green)}
+.badge-planning{background:rgba(88,166,255,0.15);color:var(--blue)}
+.badge-paused{background:rgba(210,153,34,0.15);color:var(--yellow)}
+.badge-done{background:rgba(139,148,158,0.15);color:var(--dim)}
+.badge-urgent{background:rgba(248,81,73,0.15);color:var(--red)}
+.priority-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.priority-high{background:var(--orange)}.priority-medium{background:var(--yellow)}.priority-low{background:var(--dim)}.priority-urgent{background:var(--red)}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<div class="page">
+  <h1 class="page-title">📁 Projects</h1>
+  <p class="page-sub">All active and completed projects.</p>
+  <div class="project-grid" id="project-grid"></div>
+</div>
+
+<script>
+const projects = [
+  {
+    name: '🎨 William Painter',
+    status: 'active',
+    priority: 'high',
+    description: 'Sunglasses brand — marketing, ops, and growth. Core revenue driver.',
+  },
+  {
+    name: '🎯 Acquisition Hunt',
+    status: 'active',
+    priority: 'high',
+    description: 'Searching for the next business to acquire. Deal flow, evaluation, due diligence.',
+  },
+  {
+    name: '💍 Wedding Planning',
+    status: 'active',
+    priority: 'medium',
+    description: 'Wedding logistics, vendors, timeline, and coordination. Personal priority.',
+  },
+  {
+    name: '⚡ Command Center',
+    status: 'active',
+    priority: 'medium',
+    description: 'Stanley\'s operating system — this app. Task management, memory, automation.',
+  },
+  {
+    name: '🏢 Agency Wind-Down',
+    status: 'done',
+    priority: 'low',
+    description: 'Winding down the agency business. Client transitions, final deliverables.',
+  },
+];
+
+const grid = document.getElementById('project-grid');
+grid.innerHTML = projects.map(p => `
+  <div class="project-card">
+    <div class="project-header">
+      <div class="project-name">${p.name}</div>
+      <span class="badge badge-${p.status}">${p.status}</span>
+    </div>
+    <div class="project-desc">${p.description}</div>
+    <div class="project-footer">
+      <span class="priority-dot priority-${p.priority}"></span>
+      <span style="font-size:0.75rem;color:var(--dim)">${p.priority} priority</span>
+    </div>
+  </div>
+`).join('');
+</script>
+</body>
+</html>

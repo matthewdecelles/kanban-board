@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📄 Docs — Matt's Command Center</title>
+<link rel="stylesheet" href="nav.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;
+  --blue:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#a371f7;
+  --orange:#f0883e;--cyan:#39d5e6;--pink:#f778ba;
+  --sidebar-w:360px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow:hidden}
+
+/* Layout */
+.docs-layout{display:flex;height:calc(100vh - 48px);overflow:hidden}
+.sidebar{width:var(--sidebar-w);min-width:280px;max-width:460px;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--bg);flex-shrink:0}
+.reading-pane{flex:1;overflow-y:auto;background:var(--bg)}
+
+/* Sidebar header */
+.sidebar-header{padding:16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-title{font-size:1.1rem;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.search-box{width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;outline:none;transition:border-color .15s}
+.search-box:focus{border-color:var(--blue)}
+.search-box::placeholder{color:var(--dim)}
+
+/* Tag filters */
+.tag-filters{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.tag-btn{padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;border:1px solid var(--border);background:transparent;color:var(--dim);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tag-btn:hover{border-color:var(--text);color:var(--text)}
+.tag-btn.active{color:#fff;border-color:transparent}
+
+/* Sort bar */
+.sort-bar{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);flex-shrink:0;font-size:0.75rem;color:var(--dim)}
+.sort-bar select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 8px;border-radius:6px;font-size:0.75rem;cursor:pointer}
+.file-count{margin-left:auto;font-size:0.72rem}
+
+/* File list */
+.file-list{flex:1;overflow-y:auto;padding:8px}
+.file-item{display:flex;flex-direction:column;padding:10px 12px;border-radius:8px;cursor:pointer;transition:background .12s;border:1px solid transparent;margin-bottom:2px}
+.file-item:hover{background:rgba(255,255,255,0.04)}
+.file-item.active{background:rgba(88,166,255,0.08);border-color:rgba(88,166,255,0.3)}
+.file-item-row{display:flex;align-items:center;gap:8px}
+.file-name{font-size:0.84rem;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-badge{padding:2px 7px;border-radius:8px;font-size:0.65rem;font-weight:700;color:#fff;white-space:nowrap;flex-shrink:0}
+.file-meta{display:flex;gap:10px;font-size:0.72rem;color:var(--dim);margin-top:4px;padding-left:0}
+.file-path{font-size:0.72rem;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px}
+
+/* Reading pane */
+.reading-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--dim);font-size:0.95rem;flex-direction:column;gap:12px}
+.reading-empty .hint{font-size:0.8rem;opacity:0.6}
+.doc-header{padding:24px 32px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.doc-header h1{font-size:1.3rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.doc-meta{display:flex;flex-wrap:wrap;gap:14px;font-size:0.78rem;color:var(--dim)}
+.doc-meta span{display:flex;align-items:center;gap:4px}
+.doc-content{padding:24px 32px 48px;max-width:860px;line-height:1.7;font-size:0.92rem}
+
+/* Markdown styles */
+.doc-content h1{font-size:1.5rem;margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.doc-content h2{font-size:1.25rem;margin:24px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.doc-content h3{font-size:1.05rem;margin:20px 0 8px}
+.doc-content h4{font-size:0.95rem;margin:16px 0 6px;color:var(--dim)}
+.doc-content p{margin:0 0 12px}
+.doc-content ul,.doc-content ol{margin:0 0 12px;padding-left:24px}
+.doc-content li{margin:4px 0}
+.doc-content code{background:rgba(110,118,129,0.2);padding:2px 6px;border-radius:4px;font-size:0.85em;font-family:'SF Mono',Consolas,monospace}
+.doc-content pre{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto;margin:0 0 16px;font-size:0.82rem}
+.doc-content pre code{background:none;padding:0}
+.doc-content blockquote{border-left:3px solid var(--blue);padding:8px 16px;margin:0 0 12px;color:var(--dim);background:rgba(88,166,255,0.04);border-radius:0 6px 6px 0}
+.doc-content hr{border:none;border-top:1px solid var(--border);margin:20px 0}
+.doc-content a{color:var(--blue);text-decoration:none}
+.doc-content a:hover{text-decoration:underline}
+.doc-content table{border-collapse:collapse;width:100%;margin:0 0 16px}
+.doc-content th,.doc-content td{border:1px solid var(--border);padding:8px 12px;text-align:left;font-size:0.84rem}
+.doc-content th{background:var(--card);font-weight:600}
+.doc-content strong{color:#fff}
+.doc-content img{max-width:100%;border-radius:8px}
+
+/* Loading spinner */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--dim)}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .6s linear infinite;margin-right:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Mobile */
+@media(max-width:768px){
+  .sidebar{width:100%;max-width:100%;position:absolute;z-index:100;height:calc(100vh - 48px);transition:transform .25s}
+  .sidebar.hidden{transform:translateX(-100%)}
+  .reading-pane{width:100%}
+  .mobile-toggle{display:flex!important}
+  .doc-header{padding:16px}
+  .doc-content{padding:16px}
+}
+.mobile-toggle{display:none;position:fixed;bottom:20px;left:20px;z-index:200;width:48px;height:48px;border-radius:50%;background:var(--blue);border:none;color:#fff;font-size:1.3rem;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.4);align-items:center;justify-content:center}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+
+<div class="docs-layout">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">📄 Document Browser</div>
+      <input type="text" class="search-box" id="searchBox" placeholder="Search files...">
+    </div>
+    <div class="tag-filters" id="tagFilters"></div>
+    <div class="sort-bar">
+      <span>Sort:</span>
+      <select id="sortSelect">
+        <option value="recent">Recent first</option>
+        <option value="name">Name A→Z</option>
+        <option value="size">Size ↓</option>
+        <option value="words">Words ↓</option>
+      </select>
+      <span class="file-count" id="fileCount"></span>
+    </div>
+    <div class="file-list" id="fileList">
+      <div class="loading"><div class="spinner"></div> Loading files...</div>
+    </div>
+  </div>
+
+  <!-- Reading pane -->
+  <div class="reading-pane" id="readingPane">
+    <div class="reading-empty">
+      <span style="font-size:2.5rem">📄</span>
+      <span>Select a file to view</span>
+      <span class="hint">Browse Stanley's memory, docs, and session logs</span>
+    </div>
+  </div>
+</div>
+
+<button class="mobile-toggle" id="mobileToggle" onclick="toggleSidebar()">📋</button>
+
+<script>
+let allFiles = [];
+let activeTag = null;
+let activeFile = null;
+
+const API_BASE = '/api/docs';
+
+// Init
+document.addEventListener('DOMContentLoaded', loadFiles);
+document.getElementById('searchBox').addEventListener('input', filterFiles);
+document.getElementById('sortSelect').addEventListener('change', filterFiles);
+
+async function loadFiles() {
+  try {
+    const res = await fetch(API_BASE);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    allFiles = data.files || [];
+    buildTagFilters();
+    filterFiles();
+  } catch (e) {
+    document.getElementById('fileList').innerHTML = `<div style="padding:16px;color:var(--red);font-size:0.85rem">Failed to load files: ${e.message}</div>`;
+  }
+}
+
+function buildTagFilters() {
+  const tags = {};
+  allFiles.forEach(f => {
+    if (!tags[f.tag]) tags[f.tag] = { color: f.tagColor, count: 0 };
+    tags[f.tag].count++;
+  });
+  
+  const container = document.getElementById('tagFilters');
+  // All button
+  let html = `<button class="tag-btn active" data-tag="" style="background:var(--dim);color:#fff" onclick="setTag(this,'')">All (${allFiles.length})</button>`;
+  
+  Object.entries(tags).sort((a,b) => b[1].count - a[1].count).forEach(([tag, info]) => {
+    html += `<button class="tag-btn" data-tag="${tag}" data-color="${info.color}" onclick="setTag(this,'${tag}')">${tag} (${info.count})</button>`;
+  });
+  container.innerHTML = html;
+}
+
+function setTag(btn, tag) {
+  document.querySelectorAll('.tag-btn').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = 'transparent';
+    b.style.color = 'var(--dim)';
+  });
+  btn.classList.add('active');
+  if (tag) {
+    btn.style.background = btn.dataset.color;
+    btn.style.color = '#fff';
+  } else {
+    btn.style.background = 'var(--dim)';
+    btn.style.color = '#fff';
+  }
+  activeTag = tag || null;
+  filterFiles();
+}
+
+function filterFiles() {
+  const query = document.getElementById('searchBox').value.toLowerCase();
+  const sort = document.getElementById('sortSelect').value;
+  
+  let filtered = allFiles.filter(f => {
+    if (activeTag && f.tag !== activeTag) return false;
+    if (query && !f.name.toLowerCase().includes(query) && !f.path.toLowerCase().includes(query) && !f.tag.toLowerCase().includes(query)) return false;
+    return true;
+  });
+  
+  // Sort
+  if (sort === 'name') filtered.sort((a,b) => a.name.localeCompare(b.name));
+  else if (sort === 'size') filtered.sort((a,b) => b.size - a.size);
+  else if (sort === 'words') filtered.sort((a,b) => b.words - a.words);
+  else filtered.sort((a,b) => new Date(b.modified) - new Date(a.modified));
+  
+  document.getElementById('fileCount').textContent = `${filtered.length} files`;
+  renderFileList(filtered);
+}
+
+function renderFileList(files) {
+  const container = document.getElementById('fileList');
+  if (files.length === 0) {
+    container.innerHTML = '<div style="padding:24px;text-align:center;color:var(--dim);font-size:0.85rem">No files match</div>';
+    return;
+  }
+  
+  container.innerHTML = files.map(f => `
+    <div class="file-item${activeFile === f.path ? ' active' : ''}" onclick="openFile('${f.path.replace(/'/g, "\\'")}')">
+      <div class="file-item-row">
+        <span class="file-name">${escHtml(f.name)}</span>
+        <span class="file-badge" style="background:${f.tagColor}">${f.tag}</span>
+      </div>
+      <div class="file-path">${escHtml(f.path)}</div>
+      <div class="file-meta">
+        <span>${f.sizeHuman}</span>
+        ${f.words ? `<span>${f.words.toLocaleString()} words</span>` : ''}
+        <span>${f.age}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function openFile(filePath) {
+  activeFile = filePath;
+  filterFiles(); // re-render to show active state
+  
+  const pane = document.getElementById('readingPane');
+  const file = allFiles.find(f => f.path === filePath);
+  if (!file) return;
+  
+  pane.innerHTML = `<div class="loading"><div class="spinner"></div> Loading ${escHtml(file.name)}...</div>`;
+  
+  // On mobile, hide sidebar
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.add('hidden');
+  }
+  
+  try {
+    const res = await fetch(`${API_BASE}?file=${encodeURIComponent(filePath)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    
+    const modified = new Date(file.modified).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    
+    pane.innerHTML = `
+      <div class="doc-header">
+        <h1>
+          ${escHtml(file.name)}
+          <span class="file-badge" style="background:${file.tagColor};font-size:0.7rem">${file.tag}</span>
+        </h1>
+        <div class="doc-meta">
+          <span>📁 ${escHtml(file.path)}</span>
+          <span>📊 ${file.sizeHuman}</span>
+          ${file.words ? `<span>📝 ${file.words.toLocaleString()} words</span>` : ''}
+          <span>🕐 ${modified}</span>
+        </div>
+      </div>
+      <div class="doc-content" id="docContent"></div>
+    `;
+    
+    // Render markdown
+    const contentEl = document.getElementById('docContent');
+    if (file.type === '.md' || file.type === '.jsonl') {
+      contentEl.innerHTML = marked.parse(data.content || '');
+    } else {
+      contentEl.innerHTML = `<pre>${escHtml(data.content || '')}</pre>`;
+    }
+    
+    // Scroll to top
+    pane.scrollTop = 0;
+  } catch (e) {
+    pane.innerHTML = `<div style="padding:32px;color:var(--red)">Failed to load file: ${e.message}</div>`;
+  }
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('hidden');
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Handle URL params — open file from query string
+const urlParams = new URLSearchParams(window.location.search);
+const fileParam = urlParams.get('file');
+if (fileParam) {
+  // Wait for files to load, then open
+  const waitAndOpen = setInterval(() => {
+    if (allFiles.length > 0) {
+      clearInterval(waitAndOpen);
+      openFile(fileParam);
+    }
+  }, 100);
+  setTimeout(() => clearInterval(waitAndOpen), 5000);
+}
+</script>
+</body>
+</html>

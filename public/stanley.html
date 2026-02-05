@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>⚡ Stanley — Mission Control</title>
+  <link rel="stylesheet" href="nav.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-tertiary: #6e7681;
+      --accent-blue: #58a6ff;
+      --accent-green: #3fb950;
+      --accent-yellow: #d29922;
+      --accent-red: #f85149;
+      --accent-purple: #a371f7;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 24px;
+      padding: 14px 24px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+    .stat-value.green { color: var(--accent-green); }
+    .stat-value.blue { color: var(--accent-blue); }
+    .stat-value.yellow { color: var(--accent-yellow); }
+    .stat-value.purple { color: var(--accent-purple); }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h1 { font-size: 1.4rem; font-weight: 600; }
+    .header .subtitle { color: var(--text-secondary); font-size: 0.78rem; margin-top: 2px; }
+    .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    /* ── Filter Bar ── */
+    .filter-bar {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .filter-tag {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 0.72rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-tag:hover { border-color: var(--accent-blue); color: var(--text-primary); }
+    .filter-tag.active { background: rgba(88,166,255,0.15); border-color: var(--accent-blue); color: var(--accent-blue); }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+    .btn:hover { border-color: var(--accent-blue); }
+    .btn-primary {
+      background: rgba(88,166,255,0.15);
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+    .btn-primary:hover { background: rgba(88,166,255,0.25); }
+    .btn-sm { padding: 4px 10px; font-size: 0.72rem; }
+    .btn-green { background: rgba(63,185,80,0.15); border-color: var(--accent-green); color: var(--accent-green); }
+    .btn-red { background: rgba(248,81,73,0.15); border-color: var(--accent-red); color: var(--accent-red); }
+
+    /* ── Layout ── */
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Board ── */
+    .board {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      flex: 1;
+      overflow-x: auto;
+    }
+    .column {
+      flex: 1;
+      min-width: 240px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 180px);
+    }
+    .column-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 14px 10px;
+      border-bottom: 2px solid var(--border-color);
+    }
+    .column-header h2 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .column-count {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+    }
+    .column-cards {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .column-cards.drag-over {
+      background: rgba(88,166,255,0.05);
+    }
+    .empty-col {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 24px 8px;
+      opacity: 0.5;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: grab;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .card:hover {
+      border-color: var(--accent-blue);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+    .card.dragging {
+      opacity: 0.4;
+      transform: rotate(2deg);
+    }
+    .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .card-desc {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .card-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .card-tag {
+      font-size: 0.62rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(163,113,247,0.15);
+      color: var(--accent-purple);
+      font-weight: 600;
+      text-transform: lowercase;
+    }
+    .card-tag.tag-recurring { background: rgba(210,153,34,0.15); color: var(--accent-yellow); }
+    .card-tag.tag-cron { background: rgba(88,166,255,0.15); color: var(--accent-blue); }
+    .card-tag.tag-infra { background: rgba(63,185,80,0.15); color: var(--accent-green); }
+    .card-age {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+    }
+    .card-priority {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      border-radius: 8px 0 0 8px;
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 300px;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+    }
+    .activity-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+    .activity-item {
+      display: flex;
+      gap: 10px;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(48,54,61,0.4);
+      transition: background 0.1s;
+    }
+    .activity-item:hover { background: rgba(255,255,255,0.02); }
+    .activity-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+      background: var(--bg-tertiary);
+    }
+    .activity-body {
+      flex: 1;
+      min-width: 0;
+    }
+    .activity-text {
+      font-size: 0.75rem;
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+    .activity-text strong { color: var(--accent-blue); font-weight: 600; }
+    .activity-time {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+    }
+
+    /* ── Modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      width: 520px;
+      max-width: 95vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h2 { font-size: 1.1rem; }
+    .btn-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.4rem;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .btn-close:hover { color: var(--text-primary); }
+    .form-group {
+      margin-bottom: 14px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    /* ── Detail Modal ── */
+    .detail-field { margin-bottom: 12px; }
+    .detail-label { font-size: 0.7rem; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 4px; letter-spacing: 0.3px; }
+    .detail-value { font-size: 0.85rem; color: var(--text-primary); }
+    .detail-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .column { min-width: 200px; }
+    }
+    @media (max-width: 600px) {
+      .stats-bar { gap: 16px; padding: 10px 16px; }
+      .stat-value { font-size: 1.1rem; }
+      .header { padding: 12px 16px; }
+      .board { padding: 10px; gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <script src="nav.js"></script>
+  <div class="app">
+    <!-- Stats Bar -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-item">
+        <span class="stat-value blue" id="stat-week">—</span>
+        <span class="stat-label">This Week</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value yellow" id="stat-progress">—</span>
+        <span class="stat-label">In Progress</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value purple" id="stat-total">—</span>
+        <span class="stat-label">Total Tasks</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-value green" id="stat-completion">—</span>
+        <span class="stat-label">Completion %</span>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+      <div>
+        <h1>⚡ Stanley — Mission Control</h1>
+        <div class="subtitle">Agent task board — recurring, backlog, in progress, review</div>
+      </div>
+      <div class="header-actions">
+        <div class="filter-bar" id="filter-bar"></div>
+        <button class="btn btn-primary" onclick="openCreateModal()">+ New Task</button>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+      <!-- Board -->
+      <div class="board" id="board"></div>
+
+      <!-- Activity Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">📡 Activity Feed</div>
+        <div class="activity-feed" id="activity-feed"></div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Create Modal -->
+  <div class="modal-overlay" id="create-modal" onclick="closeModal('create-modal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="modal-title">New Task</h2>
+        <button class="btn-close" onclick="closeModal('create-modal')">&times;</button>
+      </div>
+      <form id="task-form" onsubmit="saveTask(event)">
+        <input type="hidden" id="f-edit-id">
+        <div class="form-group">
+          <label for="f-title">Title *</label>
+          <input type="text" id="f-title" required placeholder="What needs to be done?">
+        </div>
+        <div class="form-group">
+          <label for="f-desc">Description</label>
+          <textarea id="f-desc" placeholder="Brief description..."></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="f-status">Column</label>
+            <select id="f-status">
+              <option value="recurring">🔄 Recurring</option>
+              <option value="backlog" selected>📥 Backlog</option>
+              <option value="in_progress">⚡ In Progress</option>
+              <option value="review">👁️ Review</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="f-priority">Priority</label>
+            <select id="f-priority">
+              <option value="high">🔴 High</option>
+              <option value="medium" selected>🟡 Medium</option>
+              <option value="low">🔵 Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="f-tags">Tags (comma-separated)</label>
+          <input type="text" id="f-tags" placeholder="cron, infra, memory...">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn" onclick="closeModal('create-modal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="detail-modal" onclick="closeModal('detail-modal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h2 id="detail-title">Task Detail</h2>
+        <button class="btn-close" onclick="closeModal('detail-modal')">&times;</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── Config ──
+    const API = '/api/tasks';
+    const STANLEY_TAG = 'stanley';
+    const _urlToken = new URLSearchParams(location.search).get('token');
+    function withToken(url) {
+      if (!_urlToken) return url;
+      return url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(_urlToken);
+    }
+
+    const COLUMNS = [
+      { id: 'recurring',    label: '🔄 Recurring',    color: '#d29922' },
+      { id: 'backlog',      label: '📥 Backlog',      color: '#8b949e' },
+      { id: 'in_progress',  label: '⚡ In Progress',  color: '#58a6ff' },
+      { id: 'review',       label: '👁️ Review',       color: '#f0883e' },
+    ];
+
+    const PRIORITY_COLORS = { high: '#f85149', medium: '#d29922', low: '#58a6ff' };
+
+    let allTasks = [];
+    let activityLog = [];
+    let activeFilter = null;
+
+    // ── Fetch ──
+    async function fetchTasks() {
+      try {
+        const res = await fetch(withToken(API));
+        const data = await res.json();
+        // Filter to stanley tasks only
+        allTasks = data.filter(t => {
+          const tags = Array.isArray(t.tags) ? t.tags : [];
+          return tags.map(x => x.toLowerCase()).includes(STANLEY_TAG);
+        });
+        render();
+      } catch (e) {
+        console.error('Fetch failed:', e);
+      }
+    }
+
+    // ── Stats ──
+    function renderStats() {
+      const now = new Date();
+      const weekAgo = new Date(now - 7 * 86400000);
+      const thisWeek = allTasks.filter(t => new Date(t.created_at) >= weekAgo).length;
+      const inProgress = allTasks.filter(t => t.status === 'in_progress').length;
+      const total = allTasks.length;
+      const done = allTasks.filter(t => t.status === 'done' || t.completed_at).length;
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+      document.getElementById('stat-week').textContent = thisWeek;
+      document.getElementById('stat-progress').textContent = inProgress;
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-completion').textContent = pct + '%';
+    }
+
+    // ── Filter ──
+    function collectTags() {
+      const tagSet = new Set();
+      allTasks.forEach(t => {
+        (Array.isArray(t.tags) ? t.tags : []).forEach(tag => {
+          if (tag.toLowerCase() !== STANLEY_TAG) tagSet.add(tag.toLowerCase());
+        });
+      });
+      return [...tagSet].sort();
+    }
+
+    function renderFilters() {
+      const tags = collectTags();
+      const bar = document.getElementById('filter-bar');
+      bar.innerHTML = tags.map(tag =>
+        `<span class="filter-tag ${activeFilter === tag ? 'active' : ''}" onclick="toggleFilter('${tag}')">${tag}</span>`
+      ).join('');
+    }
+
+    function toggleFilter(tag) {
+      activeFilter = activeFilter === tag ? null : tag;
+      render();
+    }
+
+    // ── Board ──
+    function getFilteredTasks() {
+      if (!activeFilter) return allTasks;
+      return allTasks.filter(t => {
+        const tags = (Array.isArray(t.tags) ? t.tags : []).map(x => x.toLowerCase());
+        return tags.includes(activeFilter);
+      });
+    }
+
+    function render() {
+      renderStats();
+      renderFilters();
+      renderBoard();
+      renderActivity();
+    }
+
+    function renderBoard() {
+      const tasks = getFilteredTasks();
+      const board = document.getElementById('board');
+      board.innerHTML = COLUMNS.map(col => {
+        const colTasks = tasks.filter(t => t.status === col.id);
+        return `
+          <div class="column" data-status="${col.id}">
+            <div class="column-header" style="border-bottom-color: ${col.color}">
+              <h2>${col.label}</h2>
+              <span class="column-count" style="background: ${col.color}22; color: ${col.color}">${colTasks.length}</span>
+            </div>
+            <div class="column-cards" data-status="${col.id}"
+                 ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)">
+              ${colTasks.length === 0 ? '<div class="empty-col">No tasks</div>' :
+                colTasks.map(t => renderCard(t)).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCard(t) {
+      const tags = (Array.isArray(t.tags) ? t.tags : []).filter(x => x.toLowerCase() !== STANLEY_TAG);
+      const age = getAge(t.created_at);
+      const pColor = PRIORITY_COLORS[t.priority] || PRIORITY_COLORS.medium;
+      return `
+        <div class="card" draggable="true" data-id="${t.id}"
+             ondragstart="onDragStart(event)" ondragend="onDragEnd(event)"
+             onclick="openDetail(${t.id})">
+          <div class="card-priority" style="background: ${pColor}"></div>
+          <div class="card-title">${escHtml(t.title)}</div>
+          ${t.description ? `<div class="card-desc">${escHtml(t.description)}</div>` : ''}
+          <div class="card-meta">
+            <div class="card-tags">
+              ${tags.map(tag => `<span class="card-tag tag-${tag}">${tag}</span>`).join('')}
+            </div>
+            <span class="card-age">${age}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function getAge(dateStr) {
+      if (!dateStr) return '';
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60) return mins + 'm';
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return hrs + 'h';
+      const days = Math.floor(hrs / 24);
+      if (days < 30) return days + 'd';
+      return Math.floor(days / 30) + 'mo';
+    }
+
+    function escHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s || '';
+      return d.innerHTML;
+    }
+
+    // ── Drag & Drop ──
+    let dragId = null;
+    function onDragStart(e) {
+      dragId = e.target.dataset.id;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+    function onDragEnd(e) {
+      e.target.classList.remove('dragging');
+      dragId = null;
+      document.querySelectorAll('.column-cards').forEach(el => el.classList.remove('drag-over'));
+    }
+    function onDragOver(e) {
+      e.preventDefault();
+      e.currentTarget.classList.add('drag-over');
+    }
+    function onDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+    async function onDrop(e) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      const newStatus = e.currentTarget.dataset.status;
+      if (!dragId || !newStatus) return;
+
+      const task = allTasks.find(t => String(t.id) === String(dragId));
+      if (!task || task.status === newStatus) return;
+
+      const oldStatus = task.status;
+      task.status = newStatus;
+      render();
+
+      try {
+        await fetch(withToken(API + '?id=' + dragId), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        logActivity('moved', task.title, oldStatus, newStatus);
+      } catch (err) {
+        console.error('Move failed:', err);
+        task.status = oldStatus;
+        render();
+      }
+    }
+
+    // ── Activity Feed ──
+    function logActivity(action, title, from, to) {
+      activityLog.unshift({ action, title, from, to, time: new Date() });
+      if (activityLog.length > 50) activityLog.pop();
+      renderActivity();
+    }
+
+    function renderActivity() {
+      const feed = document.getElementById('activity-feed');
+      if (activityLog.length === 0) {
+        // Build initial activity from task data
+        const sorted = [...allTasks].sort((a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at));
+        feed.innerHTML = sorted.slice(0, 20).map(t => {
+          const icon = t.completed_at ? '✅' : t.status === 'in_progress' ? '⚡' : t.status === 'review' ? '👁️' : '📥';
+          const colLabel = COLUMNS.find(c => c.id === t.status)?.label || t.status;
+          const time = t.updated_at || t.created_at;
+          return `
+            <div class="activity-item">
+              <div class="activity-icon">${icon}</div>
+              <div class="activity-body">
+                <div class="activity-text"><strong>${escHtml(t.title)}</strong> → ${colLabel}</div>
+                <div class="activity-time">${formatTime(time)}</div>
+              </div>
+            </div>
+          `;
+        }).join('') || '<div class="empty-col" style="padding:40px">No activity yet</div>';
+        return;
+      }
+
+      feed.innerHTML = activityLog.map(a => {
+        const icons = { created: '🆕', moved: '➡️', deleted: '🗑️', updated: '✏️' };
+        const icon = icons[a.action] || '📌';
+        let text = `<strong>${escHtml(a.title)}</strong>`;
+        if (a.action === 'moved') {
+          const fromCol = COLUMNS.find(c => c.id === a.from)?.label || a.from;
+          const toCol = COLUMNS.find(c => c.id === a.to)?.label || a.to;
+          text += ` moved ${fromCol} → ${toCol}`;
+        } else if (a.action === 'created') {
+          text += ' created';
+        } else if (a.action === 'deleted') {
+          text += ' deleted';
+        }
+        return `
+          <div class="activity-item">
+            <div class="activity-icon">${icon}</div>
+            <div class="activity-body">
+              <div class="activity-text">${text}</div>
+              <div class="activity-time">${formatTime(a.time)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function formatTime(d) {
+      const date = new Date(d);
+      const now = new Date();
+      const diff = now - date;
+      if (diff < 60000) return 'just now';
+      if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+      if (diff < 7 * 86400000) return Math.floor(diff / 86400000) + 'd ago';
+      return date.toLocaleDateString();
+    }
+
+    // ── Create / Edit ──
+    function openCreateModal() {
+      document.getElementById('modal-title').textContent = 'New Task';
+      document.getElementById('f-edit-id').value = '';
+      document.getElementById('f-title').value = '';
+      document.getElementById('f-desc').value = '';
+      document.getElementById('f-status').value = 'backlog';
+      document.getElementById('f-priority').value = 'medium';
+      document.getElementById('f-tags').value = '';
+      openModal('create-modal');
+    }
+
+    function openEditModal(task) {
+      document.getElementById('modal-title').textContent = 'Edit Task';
+      document.getElementById('f-edit-id').value = task.id;
+      document.getElementById('f-title').value = task.title;
+      document.getElementById('f-desc').value = task.description || '';
+      document.getElementById('f-status').value = task.status;
+      document.getElementById('f-priority').value = task.priority || 'medium';
+      const tags = (Array.isArray(task.tags) ? task.tags : []).filter(x => x.toLowerCase() !== STANLEY_TAG);
+      document.getElementById('f-tags').value = tags.join(', ');
+      openModal('create-modal');
+    }
+
+    async function saveTask(e) {
+      e.preventDefault();
+      const editId = document.getElementById('f-edit-id').value;
+      const title = document.getElementById('f-title').value.trim();
+      const description = document.getElementById('f-desc').value.trim();
+      const status = document.getElementById('f-status').value;
+      const priority = document.getElementById('f-priority').value;
+      const rawTags = document.getElementById('f-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+      // Always include 'stanley' tag
+      const tags = [STANLEY_TAG, ...rawTags.filter(t => t.toLowerCase() !== STANLEY_TAG)];
+
+      const body = { title, description, status, priority, tags };
+
+      try {
+        if (editId) {
+          await fetch(withToken(API + '?id=' + editId), {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          logActivity('updated', title);
+        } else {
+          await fetch(withToken(API), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          logActivity('created', title);
+        }
+        closeModal('create-modal');
+        await fetchTasks();
+      } catch (err) {
+        console.error('Save failed:', err);
+        alert('Failed to save task');
+      }
+    }
+
+    // ── Detail ──
+    function openDetail(id) {
+      const task = allTasks.find(t => t.id === id);
+      if (!task) return;
+      document.getElementById('detail-title').textContent = task.title;
+      const tags = (Array.isArray(task.tags) ? task.tags : []).filter(x => x.toLowerCase() !== STANLEY_TAG);
+      const colLabel = COLUMNS.find(c => c.id === task.status)?.label || task.status;
+      document.getElementById('detail-body').innerHTML = `
+        <div class="detail-field">
+          <div class="detail-label">Status</div>
+          <div class="detail-value">${colLabel}</div>
+        </div>
+        ${task.description ? `
+        <div class="detail-field">
+          <div class="detail-label">Description</div>
+          <div class="detail-value">${escHtml(task.description)}</div>
+        </div>` : ''}
+        <div class="detail-field">
+          <div class="detail-label">Priority</div>
+          <div class="detail-value" style="color: ${PRIORITY_COLORS[task.priority] || '#d29922'}">${(task.priority || 'medium').toUpperCase()}</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">Tags</div>
+          <div class="detail-value">${tags.length ? tags.join(', ') : 'none'}</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">Created</div>
+          <div class="detail-value">${task.created_at ? new Date(task.created_at).toLocaleString() : '—'}</div>
+        </div>
+        <div class="detail-field">
+          <div class="detail-label">Updated</div>
+          <div class="detail-value">${task.updated_at ? new Date(task.updated_at).toLocaleString() : '—'}</div>
+        </div>
+        <div class="detail-actions">
+          <button class="btn btn-primary btn-sm" onclick="closeModal('detail-modal'); openEditModal(allTasks.find(t=>t.id===${task.id}))">✏️ Edit</button>
+          <button class="btn btn-green btn-sm" onclick="moveTask(${task.id}, 'review')">👁️ → Review</button>
+          <button class="btn btn-red btn-sm" onclick="deleteTask(${task.id})">🗑️ Delete</button>
+        </div>
+      `;
+      openModal('detail-modal');
+    }
+
+    async function moveTask(id, newStatus) {
+      const task = allTasks.find(t => t.id === id);
+      if (!task) return;
+      const oldStatus = task.status;
+      try {
+        await fetch(withToken(API + '?id=' + id), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus })
+        });
+        logActivity('moved', task.title, oldStatus, newStatus);
+        closeModal('detail-modal');
+        await fetchTasks();
+      } catch (err) {
+        console.error('Move failed:', err);
+      }
+    }
+
+    async function deleteTask(id) {
+      const task = allTasks.find(t => t.id === id);
+      if (!confirm('Delete "' + (task?.title || '') + '"?')) return;
+      try {
+        await fetch(withToken(API + '?id=' + id), { method: 'DELETE' });
+        logActivity('deleted', task?.title || 'Unknown');
+        closeModal('detail-modal');
+        await fetchTasks();
+      } catch (err) {
+        console.error('Delete failed:', err);
+      }
+    }
+
+    // ── Modal helpers ──
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    // ── Keyboard shortcut ──
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+      }
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !document.querySelector('.modal-overlay.open')) {
+        e.preventDefault();
+        openCreateModal();
+      }
+    });
+
+    // ── Init ──
+    fetchTasks();
+    // Auto-refresh every 30s
+    setInterval(fetchTasks, 30000);
+  </script>
+</body>
+</html>

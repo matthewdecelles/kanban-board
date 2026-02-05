@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ Mission Control — Matt's Command Center</title>
+<link rel="stylesheet" href="nav.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--card:#161b22;--border:#30363d;--text:#e6edf3;--dim:#8b949e;--blue:#58a6ff;--green:#3fb950;--yellow:#d29922;--red:#f85149;--purple:#a371f7;--orange:#f0883e}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.page{max-width:1200px;margin:0 auto;padding:24px 20px}
+.page-title{font-size:1.6rem;font-weight:700;margin-bottom:4px}
+.page-sub{color:var(--dim);font-size:0.85rem;margin-bottom:24px}
+
+/* Stats row */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 20px;text-align:center}
+.stat-value{font-size:2rem;font-weight:700;line-height:1.2}
+.stat-label{color:var(--dim);font-size:0.78rem;margin-top:4px;text-transform:uppercase;letter-spacing:0.05em}
+.stat-value.blue{color:var(--blue)}.stat-value.green{color:var(--green)}.stat-value.yellow{color:var(--yellow)}.stat-value.red{color:var(--red)}.stat-value.purple{color:var(--purple)}.stat-value.orange{color:var(--orange)}
+
+/* Grid sections */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:24px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;overflow:hidden}
+.card h2{font-size:1rem;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* Task list in card */
+.task-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.85rem}
+.task-item:last-child{border-bottom:none}
+.task-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.7rem;font-weight:600}
+.badge-urgent{background:rgba(248,81,73,0.15);color:var(--red)}
+.badge-high{background:rgba(240,136,62,0.15);color:var(--orange)}
+.badge-medium{background:rgba(210,153,34,0.15);color:var(--yellow)}
+.badge-low{background:rgba(139,148,158,0.15);color:var(--dim)}
+.badge-status{background:rgba(88,166,255,0.15);color:var(--blue)}
+
+/* Quick links */
+.quick-links{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qlink{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);font-size:0.83rem;transition:border-color 0.15s,background 0.15s}
+.qlink:hover{border-color:var(--blue);background:rgba(88,166,255,0.05)}
+.qlink-icon{font-size:1.1rem}
+
+/* Activity */
+.activity-item{padding:8px 0;border-bottom:1px solid var(--border);font-size:0.83rem;line-height:1.4}
+.activity-item:last-child{border-bottom:none}
+.activity-time{color:var(--dim);font-size:0.75rem}
+
+/* Loading */
+.loading{color:var(--dim);font-size:0.85rem;padding:12px 0}
+</style>
+</head>
+<body>
+<script src="nav.js"></script>
+<div class="page">
+  <h1 class="page-title">⚡ Mission Control</h1>
+  <p class="page-sub">Matt's central command — everything at a glance.</p>
+
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card"><div class="stat-value blue" id="stat-total">—</div><div class="stat-label">Total Tasks</div></div>
+    <div class="stat-card"><div class="stat-value orange" id="stat-progress">—</div><div class="stat-label">In Progress</div></div>
+    <div class="stat-card"><div class="stat-value yellow" id="stat-todo">—</div><div class="stat-label">To Do</div></div>
+    <div class="stat-card"><div class="stat-value green" id="stat-done">—</div><div class="stat-label">Done</div></div>
+    <div class="stat-card"><div class="stat-value purple" id="stat-tickets">—</div><div class="stat-label">Open Tickets</div></div>
+    <div class="stat-card"><div class="stat-value red" id="stat-urgent">—</div><div class="stat-label">Urgent</div></div>
+  </div>
+
+  <div class="grid">
+    <!-- Priority tasks -->
+    <div class="card">
+      <h2>🔥 Priority Tasks</h2>
+      <div id="priority-tasks"><div class="loading">Loading tasks...</div></div>
+    </div>
+
+    <!-- Recent tickets -->
+    <div class="card">
+      <h2>🎫 Recent Tickets</h2>
+      <div id="recent-tickets"><div class="loading">Loading tickets...</div></div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card">
+      <h2>🔗 Quick Links</h2>
+      <div class="quick-links">
+        <a class="qlink" href="/index.html"><span class="qlink-icon">✅</span> Task Board</a>
+        <a class="qlink" href="/tickets.html"><span class="qlink-icon">🎫</span> Tickets</a>
+        <a class="qlink" href="/projects.html"><span class="qlink-icon">📁</span> Projects</a>
+        <a class="qlink" href="/memory.html"><span class="qlink-icon">🧠</span> Memory</a>
+        <a class="qlink" href="/docs.html"><span class="qlink-icon">📄</span> Docs</a>
+        <a class="qlink" href="https://stanley-dashboard.vercel.app" target="_blank"><span class="qlink-icon">📊</span> Dashboard</a>
+        <a class="qlink" href="/session.html"><span class="qlink-icon">🔄</span> Session Recovery</a>
+        <a class="qlink" href="https://file-uploader-psi-two.vercel.app" target="_blank"><span class="qlink-icon">📎</span> File Uploader</a>
+      </div>
+    </div>
+
+    <!-- Activity -->
+    <div class="card">
+      <h2>📊 Activity Summary</h2>
+      <div id="activity-summary"><div class="loading">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '';
+const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
+
+async function loadMission() {
+  try {
+    const [tasksRes, ticketsRes] = await Promise.all([
+      fetch(`${API}/api/tasks`),
+      fetch(`${API}/api/tickets`)
+    ]);
+    const tasks = await tasksRes.json();
+    const tickets = await ticketsRes.json();
+
+    // Stats
+    const inProgress = tasks.filter(t => t.status === 'in_progress');
+    const todo = tasks.filter(t => t.status === 'todo');
+    const done = tasks.filter(t => t.status === 'done');
+    const urgent = tasks.filter(t => t.priority === 'urgent');
+    const openTickets = tickets.filter(t => t.status !== 'done' && t.status !== 'cancelled');
+
+    document.getElementById('stat-total').textContent = tasks.length;
+    document.getElementById('stat-progress').textContent = inProgress.length;
+    document.getElementById('stat-todo').textContent = todo.length;
+    document.getElementById('stat-done').textContent = done.length;
+    document.getElementById('stat-tickets').textContent = openTickets.length;
+    document.getElementById('stat-urgent').textContent = urgent.length;
+
+    // Priority tasks (non-done, sorted by priority)
+    const active = tasks.filter(t => t.status !== 'done')
+      .sort((a, b) => (priorityOrder[a.priority] || 3) - (priorityOrder[b.priority] || 3))
+      .slice(0, 8);
+    
+    document.getElementById('priority-tasks').innerHTML = active.length
+      ? active.map(t => `<div class="task-item">
+          <span class="task-title">${esc(t.title)}</span>
+          <span class="badge badge-${t.priority}">${t.priority}</span>
+        </div>`).join('')
+      : '<div class="loading">No active tasks 🎉</div>';
+
+    // Recent tickets
+    const recentTickets = tickets
+      .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+      .slice(0, 6);
+    
+    document.getElementById('recent-tickets').innerHTML = recentTickets.length
+      ? recentTickets.map(t => `<div class="task-item">
+          <span class="task-title">${esc(t.title)}</span>
+          <span class="badge badge-status">${t.status}</span>
+        </div>`).join('')
+      : '<div class="loading">No tickets yet</div>';
+
+    // Activity summary
+    const statusCounts = {};
+    tasks.forEach(t => { statusCounts[t.status] = (statusCounts[t.status] || 0) + 1; });
+    const ticketStatusCounts = {};
+    tickets.forEach(t => { ticketStatusCounts[t.status] = (ticketStatusCounts[t.status] || 0) + 1; });
+
+    document.getElementById('activity-summary').innerHTML = `
+      <div style="margin-bottom:12px">
+        <div style="color:var(--dim);font-size:0.78rem;margin-bottom:6px;text-transform:uppercase">Tasks by Status</div>
+        ${Object.entries(statusCounts).map(([s,c]) => 
+          `<div class="task-item"><span class="task-title">${formatStatus(s)}</span><span style="font-weight:600">${c}</span></div>`
+        ).join('')}
+      </div>
+      <div>
+        <div style="color:var(--dim);font-size:0.78rem;margin-bottom:6px;text-transform:uppercase">Tickets by Status</div>
+        ${Object.entries(ticketStatusCounts).map(([s,c]) => 
+          `<div class="task-item"><span class="task-title">${formatStatus(s)}</span><span style="font-weight:600">${c}</span></div>`
+        ).join('')}
+      </div>
+    `;
+
+  } catch(e) {
+    console.error('Mission load error:', e);
+    document.getElementById('priority-tasks').innerHTML = '<div class="loading">Error loading data</div>';
+  }
+}
+
+function formatStatus(s) {
+  return s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function esc(s) {
+  const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML;
+}
+
+loadMission();
+</script>
+</body>
+</html>
