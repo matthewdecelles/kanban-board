@@ -915,4 +915,129 @@ body {
 .category-group.uncategorized .category-header {
   background: var(--bg-secondary);
 }
-/* Redeployed Wed Feb  4 18:26:59 PST 2026 */
+
+/* ============================================
+   FOCUS MODE
+   ============================================ */
+
+body.focus-mode {
+  background: linear-gradient(135deg, #0d1117 0%, #1a1f26 100%);
+}
+
+body.focus-mode .header {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+body.focus-mode .column:not(:has(.task-card.focused)) {
+  opacity: 0.2;
+}
+
+body.focus-mode .column:has(.task-card.focused) {
+  flex: none;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+body.focus-mode .board {
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 40px;
+}
+
+/* Focused task card */
+.task-card.focused {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+  border: 2px solid var(--accent-blue);
+  box-shadow: 0 0 30px rgba(88, 166, 255, 0.3);
+  padding: 24px;
+  cursor: default;
+}
+
+.task-card.focused .task-title {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+}
+
+.task-card.focused .task-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+}
+
+.task-card.focused .task-meta {
+  margin-bottom: 16px;
+}
+
+/* Focus complete button inside card */
+.focus-complete-btn {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  margin-top: 12px;
+}
+
+/* Focus overlay (header bar) */
+#focus-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 12px 24px;
+  background: linear-gradient(90deg, rgba(88, 166, 255, 0.15) 0%, rgba(88, 166, 255, 0.05) 100%);
+  border-bottom: 1px solid var(--accent-blue);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(10px);
+}
+
+.focus-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.focus-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--accent-blue);
+  letter-spacing: 1px;
+}
+
+.exit-focus-btn {
+  padding: 8px 16px;
+}
+
+/* Focus button in modal */
+.btn-focus {
+  background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+  color: white;
+  border: none;
+}
+
+.btn-focus:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Keyboard shortcut hint */
+body.focus-mode::after {
+  content: "Press Esc to exit focus mode";
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* Focus mode: Wed Feb  4 19:00:00 PST 2026 */

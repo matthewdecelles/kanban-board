@@ -2,6 +2,7 @@ const API_BASE = '/api';
 let tasks = [];
 let currentView = 'kanban';
 let priorityFilter = 'all'; // 'all', 'urgent', 'important', 'normal'
+let focusedTaskId = null; // Focus mode - hide all other tasks
 
 // Priority order for sorting (higher = more urgent)
 const PRIORITY_ORDER = {
@@ -37,6 +38,52 @@ function setPriorityFilter(filter) {
     renderTableView();
   }
   updateCounts();
+}
+
+// Focus Mode - hide all other tasks
+function enterFocusMode(taskId) {
+  focusedTaskId = taskId;
+  document.body.classList.add('focus-mode');
+  closeModal();
+  renderBoard();
+  renderFocusOverlay();
+}
+
+function exitFocusMode() {
+  focusedTaskId = null;
+  document.body.classList.remove('focus-mode');
+  const overlay = document.getElementById('focus-overlay');
+  if (overlay) overlay.remove();
+  renderBoard();
+  updateCounts();
+}
+
+function renderFocusOverlay() {
+  // Remove existing overlay
+  const existing = document.getElementById('focus-overlay');
+  if (existing) existing.remove();
+  
+  const task = tasks.find(t => t.id === focusedTaskId);
+  if (!task) return;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'focus-overlay';
+  overlay.innerHTML = `
+    <div class="focus-header">
+      <span class="focus-label">🎯 FOCUS MODE</span>
+      <button class="btn btn-secondary exit-focus-btn" onclick="exitFocusMode()">Exit Focus</button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+}
+
+async function completeFocusedTask() {
+  if (focusedTaskId) {
+    await updateTask(focusedTaskId, { status: 'done' });
+    exitFocusMode();
+    await fetchTasks();
+    await fetchStats();
+  }
 }
 
 // Category definitions
@@ -141,8 +188,13 @@ function renderBoard() {
       .filter(t => t.status === status)
       .filter(t => !(t.tags && t.tags.includes('stanley')));
     
-    // Apply priority filter
-    columnTasks = filterByPriority(columnTasks);
+    // Focus mode - only show focused task
+    if (focusedTaskId) {
+      columnTasks = columnTasks.filter(t => t.id === focusedTaskId);
+    } else {
+      // Apply priority filter (only when not in focus mode)
+      columnTasks = filterByPriority(columnTasks);
+    }
     
     // Sort by priority (highest first), then by position
     columnTasks.sort((a, b) => {
@@ -151,7 +203,7 @@ function renderBoard() {
       return a.position - b.position;
     });
 
-    container.innerHTML = columnTasks.map(task => createTaskCard(task)).join('');
+    container.innerHTML = columnTasks.map(task => createTaskCard(task, focusedTaskId === task.id)).join('');
   });
 
   setupDragAndDrop();
@@ -266,7 +318,7 @@ function formatDueDateShort(dateStr) {
   return `<span class="due-date${isOverdue ? ' overdue' : ''}">${formatted}</span>`;
 }
 
-function createTaskCard(task) {
+function createTaskCard(task, isFocused = false) {
   const priorityClass = `priority-${task.priority}`;
   const dueDateHtml = task.due_date ? formatDueDate(task.due_date) : '';
 
@@ -279,6 +331,7 @@ function createTaskCard(task) {
   let cardClass = '';
   if (task.priority === 'critical' || task.priority === 'urgent') cardClass = ' urgent';
   else if (task.priority === 'high' || hasImportant) cardClass = ' important';
+  if (isFocused) cardClass += ' focused';
   
   // Assignee badge
   const assigneeHtml = task.assignee && ASSIGNEES[task.assignee] 
@@ -291,10 +344,15 @@ function createTaskCard(task) {
     ? `<div class="task-tags">${regularTags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
 
+  // Focus mode complete button
+  const focusCompleteBtn = isFocused && task.status !== 'done'
+    ? `<button class="btn btn-success focus-complete-btn" onclick="event.stopPropagation(); completeFocusedTask();">✅ Mark Complete</button>`
+    : '';
 
   return `
-    <div class="task-card${cardClass}" draggable="true" data-id="${task.id}" onclick="openModal(${task.id})">
+    <div class="task-card${cardClass}" draggable="${!isFocused}" data-id="${task.id}" onclick="openModal(${task.id})">
       <div class="task-title">${escapeHtml(task.title)}</div>
+      ${task.description && isFocused ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
       <div class="task-meta">
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
         ${importantBadge}
@@ -302,6 +360,7 @@ function createTaskCard(task) {
         ${dueDateHtml}
       </div>
       ${tagsHtml}
+      ${focusCompleteBtn}
     </div>
   `;
 }
@@ -371,12 +430,15 @@ function openModal(taskId = null) {
   form.reset();
   document.getElementById('task-id').value = '';
 
+  const focusBtn = document.getElementById('focus-btn');
+
   if (taskId) {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
       title.textContent = 'Edit Task';
       deleteBtn.style.display = 'block';
       completeBtn.style.display = task.status !== 'done' ? 'block' : 'none';
+      focusBtn.style.display = task.status !== 'done' ? 'block' : 'none';
       document.getElementById('task-id').value = task.id;
       document.getElementById('title').value = task.title;
       document.getElementById('description').value = task.description || '';
@@ -388,6 +450,7 @@ function openModal(taskId = null) {
       document.getElementById('category').value = task.category || '';
     }
   } else {
+    focusBtn.style.display = 'none';
     title.textContent = 'New Task';
     deleteBtn.style.display = 'none';
     completeBtn.style.display = 'none';
@@ -543,11 +606,23 @@ function escapeHtml(text) {
 // Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    closeModal();
+    if (focusedTaskId) {
+      exitFocusMode();
+    } else {
+      closeModal();
+    }
   }
-  if (e.key === 'n' && !e.target.matches('input, textarea')) {
+  if (e.key === 'n' && !e.target.matches('input, textarea') && !focusedTaskId) {
     e.preventDefault();
     openModal();
+  }
+  // F key to focus current task from modal
+  if (e.key === 'f' && !e.target.matches('input, textarea') && document.getElementById('modal-overlay').classList.contains('active')) {
+    const taskId = document.getElementById('task-id').value;
+    if (taskId) {
+      e.preventDefault();
+      enterFocusMode(parseInt(taskId));
+    }
   }
 });
 
