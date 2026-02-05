@@ -1,13 +1,14 @@
 // ===== Command Center Navigation Bar =====
 (function() {
   const tabs = [
-    { icon: '🏠', label: 'Mission Control', href: '/mission.html' },
+    { icon: '🏠', label: 'Home', href: '/mission.html' },
     { icon: '✅', label: 'Tasks',           href: '/index.html' },
     { icon: '🎫', label: 'Tickets',         href: '/tickets.html' },
     { icon: '📁', label: 'Projects',        href: '/projects.html' },
     { icon: '🧠', label: 'Memory',          href: '/memory.html' },
     { icon: '📄', label: 'Docs',            href: '/docs.html' },
     { icon: '⚡', label: 'Stanley',         href: '/stanley.html' },
+    { icon: '📊', label: 'Dashboard', href: 'https://stanley-dashboard.vercel.app', external: true },
   ];
 
   const path = window.location.pathname;
@@ -15,11 +16,12 @@
   const nav = document.createElement('nav');
   nav.className = 'cc-nav';
   nav.innerHTML = `
-    <a class="cc-nav-brand" href="https://stanley-dashboard.vercel.app" target="_blank">⚡ Command Center</a>
+    <a class="cc-nav-brand" href="/mission.html">⚡</a>
     <div class="cc-nav-tabs">
       ${tabs.map(t => {
-        const isActive = path === t.href || (t.href === '/mission.html' && path === '/');
-        return `<a class="cc-nav-tab${isActive ? ' active' : ''}" href="${t.href}">
+        const isActive = !t.external && (path === t.href || (t.href === '/mission.html' && path === '/'));
+        const target = t.external ? ' target="_blank"' : '';
+        return `<a class="cc-nav-tab${isActive ? ' active' : ''}" href="${t.href}"${target}>
           <span class="tab-icon">${t.icon}</span>
           <span class="tab-label">${t.label}</span>
         </a>`;
