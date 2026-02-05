@@ -322,15 +322,13 @@ function createTaskCard(task, isFocused = false) {
   const priorityClass = `priority-${task.priority}`;
   const dueDateHtml = task.due_date ? formatDueDate(task.due_date) : '';
 
-  // Check if task has "important" tag
+  // Check if task has "important" tag (kept for filtering, but no badge)
   const hasImportant = task.tags && task.tags.includes('important');
-  const importantBadge = hasImportant ? '<span class="priority-badge priority-important">important</span>' : '';
 
   // Add priority class for tinted cards
-  // Urgent/Critical = red, High/Important = yellow
+  // Urgent/Critical = red only (removed yellow for cleaner look)
   let cardClass = '';
   if (task.priority === 'critical' || task.priority === 'urgent') cardClass = ' urgent';
-  else if (task.priority === 'high' || hasImportant) cardClass = ' important';
   if (isFocused) cardClass += ' focused';
   
   // Assignee badge
@@ -355,7 +353,6 @@ function createTaskCard(task, isFocused = false) {
       ${task.description && isFocused ? `<div class="task-description">${escapeHtml(task.description)}</div>` : ''}
       <div class="task-meta">
         <span class="priority-badge ${priorityClass}">${task.priority}</span>
-        ${importantBadge}
         ${assigneeHtml}
         ${dueDateHtml}
       </div>
