@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🦞 Matt's Task List</title>
-  <link rel="stylesheet" href="styles.css?v=20260204b">
+  <link rel="stylesheet" href="styles.css?v=20260204c">
   <link rel="stylesheet" href="nav.css">
 </head>
 <body>
@@ -19,6 +19,14 @@
         <div class="view-toggle">
           <button class="view-btn active" data-view="kanban" onclick="setView('kanban')">📋 Kanban</button>
           <button class="view-btn" data-view="table" onclick="setView('table')">📊 Table</button>
+        </div>
+        <div class="priority-filter">
+          <select id="priority-filter" onchange="setPriorityFilter(this.value)">
+            <option value="all">All Priorities</option>
+            <option value="urgent">🔴 Urgent Only</option>
+            <option value="important">🟡 Important Only</option>
+            <option value="normal">⚪ Normal Only</option>
+          </select>
         </div>
         <div class="stats" id="stats"></div>
         <button class="btn btn-primary" onclick="openModal()">+ New Task</button>
@@ -156,6 +164,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=20260203"></script>
+  <script src="app.js?v=20260204c"></script>
 </body>
 </html>

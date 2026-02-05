@@ -1,6 +1,43 @@
 const API_BASE = '/api';
 let tasks = [];
 let currentView = 'kanban';
+let priorityFilter = 'all'; // 'all', 'urgent', 'important', 'normal'
+
+// Priority order for sorting (higher = more urgent)
+const PRIORITY_ORDER = {
+  critical: 5,
+  urgent: 4,
+  high: 3,
+  medium: 2,
+  low: 1
+};
+
+// Priority grouping for filter
+function getPriorityGroup(task) {
+  const p = task.priority;
+  const hasImportantTag = task.tags && task.tags.includes('important');
+  
+  if (p === 'critical' || p === 'urgent') return 'urgent';
+  if (p === 'high' || hasImportantTag) return 'important';
+  return 'normal';
+}
+
+// Filter tasks by priority
+function filterByPriority(taskList) {
+  if (priorityFilter === 'all') return taskList;
+  return taskList.filter(t => getPriorityGroup(t) === priorityFilter);
+}
+
+// Set priority filter
+function setPriorityFilter(filter) {
+  priorityFilter = filter;
+  if (currentView === 'kanban') {
+    renderBoard();
+  } else {
+    renderTableView();
+  }
+  updateCounts();
+}
 
 // Category definitions
 const CATEGORIES = {
@@ -100,10 +137,19 @@ function renderBoard() {
 
   columns.forEach(status => {
     const container = document.getElementById(`tasks-${status}`);
-    const columnTasks = tasks
+    let columnTasks = tasks
       .filter(t => t.status === status)
-      .filter(t => !(t.tags && t.tags.includes('stanley')))
-      .sort((a, b) => a.position - b.position);
+      .filter(t => !(t.tags && t.tags.includes('stanley')));
+    
+    // Apply priority filter
+    columnTasks = filterByPriority(columnTasks);
+    
+    // Sort by priority (highest first), then by position
+    columnTasks.sort((a, b) => {
+      const priorityDiff = (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0);
+      if (priorityDiff !== 0) return priorityDiff;
+      return a.position - b.position;
+    });
 
     container.innerHTML = columnTasks.map(task => createTaskCard(task)).join('');
   });
@@ -114,7 +160,10 @@ function renderBoard() {
 // Table View with Category Groups
 function renderTableView() {
   const container = document.getElementById('table-container');
-  const filteredTasks = tasks.filter(t => !(t.tags && t.tags.includes('stanley')));
+  let filteredTasks = tasks.filter(t => !(t.tags && t.tags.includes('stanley')));
+  
+  // Apply priority filter
+  filteredTasks = filterByPriority(filteredTasks);
   
   // Group by category
   const grouped = {};
@@ -170,7 +219,9 @@ function renderTableView() {
             </thead>
             <tbody>
               ${catTasks.sort((a, b) => {
-                // Sort by status (in_progress first, then todo, then backlog, then done)
+                // Sort by priority first (highest first), then by status
+                const priorityDiff = (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0);
+                if (priorityDiff !== 0) return priorityDiff;
                 const statusOrder = { in_progress: 0, todo: 1, backlog: 2, done: 3 };
                 return (statusOrder[a.status] || 2) - (statusOrder[b.status] || 2);
               }).map(task => `
@@ -223,10 +274,11 @@ function createTaskCard(task) {
   const hasImportant = task.tags && task.tags.includes('important');
   const importantBadge = hasImportant ? '<span class="priority-badge priority-important">important</span>' : '';
 
-  // Add urgent/critical class for tinted cards
+  // Add priority class for tinted cards
+  // Urgent/Critical = red, High/Important = yellow
   let cardClass = '';
-  if (task.priority === 'critical') cardClass = ' critical';
-  else if (task.priority === 'urgent') cardClass = ' urgent';
+  if (task.priority === 'critical' || task.priority === 'urgent') cardClass = ' urgent';
+  else if (task.priority === 'high' || hasImportant) cardClass = ' important';
   
   // Assignee badge
   const assigneeHtml = task.assignee && ASSIGNEES[task.assignee] 
@@ -279,8 +331,11 @@ function formatDueDate(dateStr) {
 function updateCounts() {
   const columns = ['backlog', 'todo', 'in_progress', 'done'];
   columns.forEach(status => {
-    const count = tasks.filter(t => t.status === status).filter(t => !(t.tags && t.tags.includes('stanley'))).length;
-    document.getElementById(`count-${status}`).textContent = count;
+    let columnTasks = tasks
+      .filter(t => t.status === status)
+      .filter(t => !(t.tags && t.tags.includes('stanley')));
+    columnTasks = filterByPriority(columnTasks);
+    document.getElementById(`count-${status}`).textContent = columnTasks.length;
   });
 }
 
