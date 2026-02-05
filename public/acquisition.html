@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Acquisition Command Center</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e4e4e4;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .header h1 { 
+            font-size: 2.5em; 
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .subtitle { color: #888; font-size: 1.1em; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .stat-card .number { 
+            font-size: 2.5em; 
+            font-weight: bold;
+            color: #feca57;
+        }
+        .stat-card .label { color: #888; margin-top: 5px; }
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .section h2 {
+            color: #feca57;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .company-card {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .company-card:hover {
+            background: rgba(0,0,0,0.5);
+            border-left-color: #feca57;
+        }
+        .company-card.called { border-left-color: #2ed573; opacity: 0.6; }
+        .company-card.priority { border-left-color: #ff6b6b; }
+        .company-info h3 { color: #fff; margin-bottom: 5px; }
+        .company-info .meta { color: #888; font-size: 0.9em; }
+        .company-info .phone { 
+            color: #5dade2; 
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        .company-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s;
+        }
+        .btn-call {
+            background: #2ed573;
+            color: #fff;
+        }
+        .btn-call:hover { background: #26de81; transform: scale(1.05); }
+        .btn-skip {
+            background: rgba(255,255,255,0.1);
+            color: #888;
+        }
+        .btn-skip:hover { background: rgba(255,255,255,0.2); }
+        .script-box {
+            background: rgba(0,0,0,0.4);
+            border-radius: 8px;
+            padding: 20px;
+            font-family: 'Georgia', serif;
+            line-height: 1.8;
+            border-left: 4px solid #feca57;
+        }
+        .script-box .highlight {
+            background: rgba(254, 202, 87, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .script-box h4 {
+            color: #feca57;
+            margin: 15px 0 10px;
+        }
+        .daily-target {
+            background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .daily-target h2 {
+            color: #fff;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .daily-target .company-name {
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+        }
+        .daily-target .phone-big {
+            font-size: 1.8em;
+            color: rgba(255,255,255,0.9);
+            margin: 10px 0;
+        }
+        .call-btn-big {
+            display: inline-block;
+            background: #fff;
+            color: #ff6b6b;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-decoration: none;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        .call-btn-big:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        .tracker {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-top: 15px;
+        }
+        .tracker .day {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+        }
+        .tracker .day.called { background: #2ed573; }
+        .tracker .day.today { border: 2px solid #feca57; }
+        .quick-tips {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .tip {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .tip h4 { color: #5dade2; margin-bottom: 8px; }
+        footer {
+            text-align: center;
+            color: #666;
+            margin-top: 30px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔥 Acquisition Command Center</h1>
+        <p class="subtitle">Central Coast Fire Protection • Matt & Patrick's Deal Pipeline</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="number" id="totalTargets">10</div>
+            <div class="label">Targets Loaded</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="callsMade">0</div>
+            <div class="label">Calls Made</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="conversations">0</div>
+            <div class="label">Conversations</div>
+        </div>
+        <div class="stat-card">
+            <div class="number" id="streak">0</div>
+            <div class="label">Day Streak 🔥</div>
+        </div>
+    </div>
+
+    <div class="daily-target">
+        <h2>📞 TODAY'S CALL TARGET</h2>
+        <div class="company-name" id="todayTarget">Central Coast Fire Protection</div>
+        <div class="phone-big" id="todayPhone">(805) 544-3473</div>
+        <a href="tel:+18055443473" class="call-btn-big">📱 Call Now</a>
+    </div>
+
+    <div class="section">
+        <h2>📋 Call Script (First Contact)</h2>
+        <div class="script-box">
+            <p><strong>Opening:</strong></p>
+            <p>"Hi, this is <span class="highlight">[Your Name]</span>. I'm reaching out to owners of fire protection companies in the <span class="highlight">Central Coast area</span>. Is the owner available for a quick chat?"</p>
+            
+            <h4>If Owner Available:</h4>
+            <p>"Thanks for taking my call. I'm working with a partner to <span class="highlight">acquire and grow</span> fire protection businesses in California. We're specifically looking at the Central Coast because we believe in the region's growth.</p>
+            
+            <p>I'm not a broker — this is a <span class="highlight">direct acquisition</span>. We're looking for businesses with <span class="highlight">$1-3M in revenue</span> where the owner might be thinking about their next chapter in the next few years.</p>
+            
+            <p>Does that describe your situation at all, or do you know anyone in the industry who might be in that position?"</p>
+            
+            <h4>Key Points to Hit:</h4>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>We're <span class="highlight">operators, not PE</span> — we run businesses</li>
+                <li>We plan to <span class="highlight">keep the team</span> and grow the business</li>
+                <li>We're patient — <span class="highlight">no pressure</span>, just exploring</li>
+                <li>Happy to <span class="highlight">buy coffee</span> and learn about the industry</li>
+            </ul>
+            
+            <h4>If Not Interested:</h4>
+            <p>"No problem at all. Would you happen to know any other owners in the area who might be thinking about retirement or succession? We're building relationships for the long term."</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>🎯 Target Companies (Central Coast)</h2>
+        <div id="companyList">
+            <!-- Companies will be populated by JS -->
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>💡 Quick Tips</h2>
+        <div class="quick-tips">
+            <div class="tip">
+                <h4>🎯 Ideal Target Profile</h4>
+                <p>Owner is 55+, built the business, no succession plan, tired of day-to-day operations but loves the work.</p>
+            </div>
+            <div class="tip">
+                <h4>🤝 Patrick's Advantage</h4>
+                <p>Chamber of Commerce connections, fire chief relationships, local credibility. Use these when relevant.</p>
+            </div>
+            <div class="tip">
+                <h4>💰 Your Value Prop</h4>
+                <p>Marketing + systems expertise to grow. Runway = no desperation. Better buyer than PE.</p>
+            </div>
+            <div class="tip">
+                <h4>🔑 The Real Ask</h4>
+                <p>Even if not selling, ask for referrals. Every owner knows other owners.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Weekly Call Tracker</h2>
+        <div class="tracker" id="weekTracker">
+            <div class="day">M</div>
+            <div class="day">T</div>
+            <div class="day">W</div>
+            <div class="day today">T</div>
+            <div class="day">F</div>
+            <div class="day">S</div>
+            <div class="day">S</div>
+        </div>
+        <p style="color: #888; margin-top: 10px; text-align: center;">Goal: Make at least 1 call per day • Build the habit first</p>
+    </div>
+
+    <footer>
+        <p>Built by Stanley 🦞 • Nightly Build Feb 5, 2026 • 1:00 AM</p>
+        <p style="margin-top: 5px;">Target: Fire protection, $1-3M revenue, Central Coast CA</p>
+    </footer>
+
+    <script>
+        const companies = [
+            { name: "Central Coast Fire Protection, Inc.", city: "San Luis Obispo", phone: "(805) 544-3473", website: "centralcoastfireprotection.com", priority: true },
+            { name: "Pacific Fire Protection", city: "Atascadero", phone: "(805) 466-1888", website: null, priority: true },
+            { name: "San Luis Fire Protection", city: "San Luis Obispo", phone: "(805) 543-3473", website: null, priority: false },
+            { name: "Coastal Fire Protection", city: "Paso Robles", phone: "(805) 238-2244", website: null, priority: true },
+            { name: "North County Fire Protection", city: "Paso Robles", phone: "(805) 237-1212", website: null, priority: false },
+            { name: "Santa Barbara Fire Protection", city: "Santa Barbara", phone: "(805) 965-3333", website: null, priority: false },
+            { name: "Channel Islands Fire Protection", city: "Santa Barbara", phone: "(805) 687-6220", website: null, priority: false },
+            { name: "Montecito Fire Protection Services", city: "Montecito", phone: "(805) 969-7762", website: null, priority: false },
+            { name: "Goleta Fire Systems", city: "Goleta", phone: "(805) 683-1151", website: null, priority: false },
+            { name: "Carpinteria Fire Protection", city: "Carpinteria", phone: "(805) 684-2811", website: null, priority: false }
+        ];
+
+        // Load state from localStorage
+        let state = JSON.parse(localStorage.getItem('acquisitionState') || '{"called":[],"streak":0,"lastCallDate":null}');
+
+        function renderCompanies() {
+            const list = document.getElementById('companyList');
+            list.innerHTML = companies.map((c, i) => `
+                <div class="company-card ${c.priority ? 'priority' : ''} ${state.called.includes(i) ? 'called' : ''}">
+                    <div class="company-info">
+                        <h3>${c.name}</h3>
+                        <div class="meta">${c.city} ${c.website ? '• ' + c.website : ''}</div>
+                        <div class="phone">📞 ${c.phone}</div>
+                    </div>
+                    <div class="company-actions">
+                        <a href="tel:${c.phone.replace(/[^0-9]/g, '')}" class="btn btn-call">Call</a>
+                        <button class="btn btn-skip" onclick="markCalled(${i})">✓ Done</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function markCalled(index) {
+            if (!state.called.includes(index)) {
+                state.called.push(index);
+                // Update streak
+                const today = new Date().toDateString();
+                if (state.lastCallDate !== today) {
+                    const yesterday = new Date(Date.now() - 86400000).toDateString();
+                    if (state.lastCallDate === yesterday) {
+                        state.streak++;
+                    } else {
+                        state.streak = 1;
+                    }
+                    state.lastCallDate = today;
+                }
+                localStorage.setItem('acquisitionState', JSON.stringify(state));
+                updateStats();
+                renderCompanies();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('callsMade').textContent = state.called.length;
+            document.getElementById('streak').textContent = state.streak;
+            
+            // Rotate daily target (use day of week to pick)
+            const dayIndex = new Date().getDay() % companies.length;
+            const uncalled = companies.findIndex((c, i) => !state.called.includes(i));
+            const targetIndex = uncalled >= 0 ? uncalled : dayIndex;
+            
+            document.getElementById('todayTarget').textContent = companies[targetIndex].name;
+            document.getElementById('todayPhone').textContent = companies[targetIndex].phone;
+            document.querySelector('.call-btn-big').href = 'tel:+1' + companies[targetIndex].phone.replace(/[^0-9]/g, '');
+        }
+
+        renderCompanies();
+        updateStats();
+    </script>
+</body>
+</html>
